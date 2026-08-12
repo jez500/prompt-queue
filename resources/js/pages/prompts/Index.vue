@@ -2,6 +2,7 @@
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import FilterBar from '@/components/prompts/FilterBar.vue';
+import PromptEditSheet from '@/components/prompts/PromptEditSheet.vue';
 import PromptList from '@/components/prompts/PromptList.vue';
 import QuickCapture from '@/components/prompts/QuickCapture.vue';
 import { usePromptFilters } from '@/composables/usePromptFilters';
@@ -79,5 +80,7 @@ const toggle = <T extends string>(list: T[], value: T): T[] =>
             :can-reorder="props.canReorder"
             @edit="editing = $event"
         />
+
+        <PromptEditSheet :prompt="editing" @close="editing = null" />
     </div>
 </template>

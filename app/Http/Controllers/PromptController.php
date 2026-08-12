@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SyncPromptTags;
 use App\Enums\PromptPriority;
 use App\Enums\PromptStatus;
 use App\Http\Requests\PromptIndexRequest;
 use App\Http\Requests\PromptStoreRequest;
+use App\Http\Requests\PromptUpdateRequest;
 use App\Http\Resources\PromptResource;
 use App\Models\Prompt;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -67,6 +71,50 @@ class PromptController extends Controller
                 'position' => 0,
             ]);
         });
+
+        return back();
+    }
+
+    /**
+     * Update a prompt, moving it between projects and syncing its tags.
+     */
+    public function update(PromptUpdateRequest $request, Prompt $prompt, SyncPromptTags $syncTags): RedirectResponse
+    {
+        Gate::authorize('update', $prompt);
+
+        $targetProjectId = $request->bucketProjectId();
+
+        DB::transaction(function () use ($request, $prompt, $targetProjectId, $syncTags): void {
+            $attributes = $request->fillableAttributes();
+
+            if ($targetProjectId !== $prompt->project_id) {
+                Prompt::query()
+                    ->whereBelongsTo($request->user())
+                    ->inBucket($targetProjectId)
+                    ->increment('position');
+
+                $attributes['project_id'] = $targetProjectId;
+                $attributes['position'] = 0;
+            }
+
+            $prompt->update($attributes);
+
+            $syncTags($prompt, $request->user(), $request->tagNames());
+        });
+
+        return back();
+    }
+
+    /**
+     * Delete a prompt.
+     */
+    public function destroy(Request $request, Prompt $prompt): RedirectResponse
+    {
+        Gate::authorize('delete', $prompt);
+
+        $prompt->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Prompt deleted.')]);
 
         return back();
     }

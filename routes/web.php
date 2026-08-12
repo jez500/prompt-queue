@@ -10,6 +10,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('prompts', [PromptController::class, 'index'])->name('prompts.index');
     Route::post('prompts', [PromptController::class, 'store'])->name('prompts.store');
+    Route::patch('prompts/{prompt}', [PromptController::class, 'update'])->name('prompts.update');
+    Route::delete('prompts/{prompt}', [PromptController::class, 'destroy'])->name('prompts.destroy');
 });
 
 require __DIR__.'/settings.php';

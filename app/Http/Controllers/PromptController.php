@@ -34,7 +34,7 @@ class PromptController extends Controller
             ->get();
 
         return Inertia::render('prompts/Index', [
-            'prompts' => PromptResource::collection($prompts),
+            'prompts' => PromptResource::collection($prompts)->resolve(),
             'canReorder' => $request->canReorder(),
             'filters' => [
                 'project' => $request->string('project')->toString() ?: null,

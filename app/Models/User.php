@@ -64,4 +64,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Tag::class);
     }
+
+    /**
+     * The prompts this user has captured.
+     *
+     * @return HasMany<Prompt, $this>
+     */
+    public function prompts(): HasMany
+    {
+        return $this->hasMany(Prompt::class);
+    }
 }

@@ -594,7 +594,7 @@ Expected: PASS (2 tests)
 ```bash
 vendor/bin/pint --dirty --format agent
 git add app/Models database/migrations database/factories tests/Feature/TagModelTest.php
-git commit -m "feat: add per-user tag model and prompt_tag pivot"
+git commit -m "feat: add per-user tag model"
 ```
 
 ---

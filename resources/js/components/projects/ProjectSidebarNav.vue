@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Inbox, Layers } from '@lucide/vue';
+import { Inbox, Layers, Plus } from '@lucide/vue';
 import { computed } from 'vue';
+import ProjectFormDialog from '@/components/projects/ProjectFormDialog.vue';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -75,6 +76,15 @@ const currentProject = computed<string | null>(() => {
                 <SidebarMenuBadge v-if="project.openPromptsCount > 0">
                     {{ project.openPromptsCount }}
                 </SidebarMenuBadge>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+                <ProjectFormDialog>
+                    <SidebarMenuButton>
+                        <Plus />
+                        <span>New project</span>
+                    </SidebarMenuButton>
+                </ProjectFormDialog>
             </SidebarMenuItem>
         </SidebarMenu>
     </SidebarGroup>

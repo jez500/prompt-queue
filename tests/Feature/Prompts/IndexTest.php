@@ -8,13 +8,6 @@ use App\Models\Tag;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
 
-beforeEach(function () {
-    // The `prompts/Index` Vue component is created in a later task; it has no
-    // Vite manifest entry and no file on disk yet, so bypass both checks here.
-    $this->withoutVite();
-    config(['inertia.testing.ensure_pages_exist' => false]);
-});
-
 test('the index renders the workbench with open prompts only', function () {
     $user = User::factory()->create();
     Prompt::factory()->forUser($user)->status(PromptStatus::Todo)->create(['body' => 'Open one']);

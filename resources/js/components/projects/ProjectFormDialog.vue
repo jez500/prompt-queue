@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -43,6 +44,9 @@ const submit = (): void => {
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>New project</DialogTitle>
+                <DialogDescription class="sr-only">
+                    Create a sidebar project for grouping prompts.
+                </DialogDescription>
             </DialogHeader>
 
             <div class="grid gap-2">

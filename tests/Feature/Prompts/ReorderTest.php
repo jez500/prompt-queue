@@ -50,6 +50,24 @@ test('an id from another bucket is rejected', function () {
         ->and($inInbox->refresh()->position)->toBe(0);
 });
 
+test('a partial bucket list is rejected', function () {
+    $user = User::factory()->create();
+    $first = Prompt::factory()->forUser($user)->atPosition(0)->create();
+    $second = Prompt::factory()->forUser($user)->atPosition(1)->create();
+    $third = Prompt::factory()->forUser($user)->atPosition(2)->create();
+
+    $this->actingAs($user)
+        ->patch(route('prompts.reorder'), [
+            'project' => null,
+            'ids' => [$third->id, $first->id],
+        ])
+        ->assertSessionHasErrors('ids');
+
+    expect($first->refresh()->position)->toBe(0)
+        ->and($second->refresh()->position)->toBe(1)
+        ->and($third->refresh()->position)->toBe(2);
+});
+
 test('another user\'s prompt id is rejected', function () {
     $user = User::factory()->create();
     $mine = Prompt::factory()->forUser($user)->atPosition(0)->create();

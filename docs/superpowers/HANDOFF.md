@@ -1,7 +1,7 @@
 # HANDOFF — Prompt Queue, subagent-driven execution
 
-Written mid-execution because the session hit a usage limit. Another model should
-resume from here.
+Originally written mid-execution because the session hit a usage limit. Updated after
+resuming the session: Tasks 13-16 and the final-review fix round are now complete.
 
 ## What this is
 
@@ -19,51 +19,28 @@ one fresh implementer subagent per task, then a task reviewer, then a fix loop i
 the review finds anything, then a ledger entry. **The user chose `sonnet` for all
 implementer and reviewer subagents** — keep using it.
 
-## EXACT NEXT ACTION
+## Current status
 
-**Task 13 was implemented but NOT yet reviewed.** That is the immediate next step.
+Tasks 0-16 have been implemented and reviewed. The final whole-branch review found
+three important blockers, all addressed in the final fix round:
 
-```bash
-cd /shares/ubuntu/home/jez/sites/prompt-queue
-SDD=/home/jez/.claude/plugins/cache/claude-plugins-official/superpowers/6.2.0/skills/subagent-driven-development/scripts
-"$SDD/review-package" docs/superpowers/plans/2026-08-12-prompt-queue.md 236fccf ac68a45
-```
+- Partial reorder payloads now fail validation instead of corrupting positions.
+- PHPStan is green; `PromptReorderRequest::after()` has an iterable value type and
+  `UserFactory::withTwoFactor()` returns a real state.
+- Prompt filter visits now push browser history entries instead of replacing them.
 
-Then dispatch a task reviewer (sonnet) with three paths: the brief
-(`task-13-brief.md`), the report (`task-13-report.md`), and the printed diff path.
-
-Task 13's implementer reported: types:check clean, lint:check clean, `npm run build`
-succeeded, IndexTest 10/10, full suite 86 passing / 4 pre-existing skips. It also
-removed the `beforeEach` in `tests/Feature/Prompts/IndexTest.php` (a deferred item
-from Task 7) and confirmed the tests still pass without it.
-
-**Things worth telling the Task 13 reviewer to check specifically:**
-- Copy is clipboard-FIRST: the status PATCH must fire only after a successful
-  clipboard write. If the clipboard is unavailable or throws, it must fall back to
-  selecting the body text + error toast and leave status untouched.
-- Cmd/Ctrl+Enter submits; plain Enter must insert a newline. Empty/whitespace-only
-  bodies must not submit.
-- Filter changes must strip empty values from the query string. An empty `status[]`
-  left in the URL is read server-side as an explicit filter and silently disables
-  drag reordering.
-- `PromptList` must NOT import any drag library yet (Task 15 adds it) but must
-  accept `canReorder` and render handles conditionally.
-- No `PromptEditSheet` (Task 14 owns it). The page's `editing` ref having no opener
-  yet is expected, not a defect.
+One manual frontend warning was also fixed: `ProjectFormDialog` now provides a
+screen-reader-only `DialogDescription`, and a fresh browser check produced no new
+missing-description warning.
 
 ## Remaining work
 
 | Task | State |
 |---|---|
-| 0–12 | Complete, reviewed clean, in ledger |
-| 13 | **Implemented (`ac68a45`), review OUTSTANDING** |
-| 14 | Not started — edit slide-over (`PromptEditSheet.vue`, `TagInput.vue`) |
-| 15 | Not started — drag reordering; installs `sortablejs` + `vuedraggable@next` (the ONLY approved new dependency) |
-| 16 | Not started — `ProjectFormDialog.vue`, sidebar trigger, full verification sweep |
-| Final | Whole-branch review, then `superpowers:finishing-a-development-branch` |
+| 0–16 | Complete |
+| Final review | Complete after 1 fix round |
 
-Final review range when you get there: `f9d8f74..HEAD`. Point the final reviewer at
-the deferred-minor and pattern lines in `progress.md` so it can triage them.
+The authoritative progress record is still `.superpowers/sdd/2026-08-12-prompt-queue/progress.md`.
 
 ## Per-task loop (what I've been doing)
 

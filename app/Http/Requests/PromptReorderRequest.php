@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Prompt;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,6 +28,8 @@ class PromptReorderRequest extends FormRequest
      * Reject any id the user does not own or that is not already in this bucket.
      *
      * A silent skip would leave the UI showing an order the database does not have.
+     *
+     * @return array<int, Closure(Validator): void>
      */
     public function after(): array
     {
@@ -38,13 +41,19 @@ class PromptReorderRequest extends FormRequest
 
                 $ids = $this->promptIds();
 
-                $valid = Prompt::query()
+                $bucketIds = Prompt::query()
                     ->whereBelongsTo($this->user())
                     ->inBucket($this->bucketProjectId())
-                    ->whereIn('id', $ids)
-                    ->count();
+                    ->pluck('id')
+                    ->map(fn (mixed $id): int => (int) $id)
+                    ->all();
 
-                if ($valid !== count($ids)) {
+                $submittedIds = $ids;
+
+                sort($bucketIds);
+                sort($submittedIds);
+
+                if ($bucketIds !== $submittedIds) {
                     $validator->errors()->add('ids', __('One or more prompts do not belong to this list.'));
                 }
             },

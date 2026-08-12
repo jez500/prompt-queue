@@ -30,7 +30,6 @@ export function usePromptFilters(current: () => PromptFilters) {
         router.get(index.url(), query, {
             preserveState: true,
             preserveScroll: true,
-            replace: true,
             only: ['prompts', 'filters', 'canReorder'],
         });
     };

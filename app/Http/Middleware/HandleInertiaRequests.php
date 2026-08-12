@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\PromptStatus;
+use App\Http\Resources\ProjectResource;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,12 +38,26 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
+            'projects' => $user
+                ? ProjectResource::collection(
+                    $user->projects()
+                        ->withCount(['prompts as open_prompts_count' => fn (Builder $query) => $query->whereIn('status', [
+                            PromptStatus::Todo->value,
+                            PromptStatus::Implementing->value,
+                        ])])
+                        ->orderBy('name')
+                        ->get()
+                )->resolve()
+                : [],
+            'tags' => $user ? $user->tags()->orderBy('name')->pluck('name')->all() : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

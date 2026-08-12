@@ -78,6 +78,7 @@ const toggle = <T extends string>(list: T[], value: T): T[] =>
         <PromptList
             :prompts="props.prompts"
             :can-reorder="props.canReorder"
+            :project-id="captureProjectId"
             @edit="editing = $event"
         />
 

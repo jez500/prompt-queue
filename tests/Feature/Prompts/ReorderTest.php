@@ -46,7 +46,8 @@ test('an id from another bucket is rejected', function () {
         ->patch(route('prompts.reorder'), ['project' => null, 'ids' => [$inProject->id, $inInbox->id]])
         ->assertSessionHasErrors('ids');
 
-    expect($inProject->refresh()->position)->toBe(0);
+    expect($inProject->refresh()->position)->toBe(0)
+        ->and($inInbox->refresh()->position)->toBe(0);
 });
 
 test('another user\'s prompt id is rejected', function () {

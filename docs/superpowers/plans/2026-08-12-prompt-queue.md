@@ -3103,7 +3103,7 @@ with `import ProjectSidebarNav from '@/components/projects/ProjectSidebarNav.vue
 - [ ] **Step 4: Generate Wayfinder routes and type-check**
 
 ```bash
-php artisan wayfinder:generate
+php artisan wayfinder:generate --with-form
 npm run types:check
 npm run lint:check
 ```
@@ -3610,7 +3610,7 @@ const toggle = <T extends string>(list: T[], value: T): T[] =>
 - [ ] **Step 7: Verify the build**
 
 ```bash
-php artisan wayfinder:generate
+php artisan wayfinder:generate --with-form
 npm run types:check
 npm run lint:check
 npm run build
@@ -4237,4 +4237,4 @@ git commit -m "feat: create projects from the sidebar"
 - **Migration order matters.** `create_prompts_table` must run before `create_prompt_tag_table`, which has a foreign key to it. Rename the migration files if the generator produces the wrong order.
 - **`inBucket(null)` is not `where('project_id', null)`.** SQL `= NULL` never matches. The scope handles this; do not inline the condition anywhere.
 - **Tailwind v4 cannot see interpolated class names.** Every colour class must exist as a complete literal string in `projectColors.ts`.
-- **If a Wayfinder import path is wrong,** run `php artisan wayfinder:generate` and read the generated file under `resources/js/actions/` to get the exact export name.
+- **If a Wayfinder import path is wrong,** run `php artisan wayfinder:generate --with-form` and read the generated file under `resources/js/actions/` to get the exact export name.

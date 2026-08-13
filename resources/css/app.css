@@ -1,6 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/*
+  ---break---
+*/
+
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
+@import 'shadcn-vue/tailwind.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -8,10 +16,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+    --font-sans: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -19,6 +25,20 @@
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
+
+    /*
+      Structural neutrals that sit between the shadcn defaults. `pane` is the
+      list-pane surface (one step lighter than the app background); the
+      foreground ramp descends from `muted` through to `ghost` for placeholders
+      and empty states.
+    */
+    --color-pane: var(--pane);
+    --color-subtle-foreground: var(--subtle-foreground);
+    --color-faint-foreground: var(--faint-foreground);
+    --color-ghost-foreground: var(--ghost-foreground);
+    --color-surface-hover: var(--surface-hover);
+    --color-border-strong: var(--border-strong);
+    --color-border-hover: var(--border-hover);
 
     --color-card: var(--card);
     --color-card-foreground: var(--card-foreground);
@@ -59,6 +79,8 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+    --font-heading: var(--font-sans);
+    --radius-xl: calc(var(--radius) + 4px);
 }
 
 /*
@@ -77,89 +99,69 @@
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
     }
-}
-
-@layer utilities {
-    body,
-    html {
-        --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-            'Noto Color Emoji';
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-background text-foreground;
+        @apply font-sans;
+    }
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
     }
 }
 
-:root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
-}
-
+/*
+  The prompt queue redesign has no light variant — :root and .dark share the
+  same dark palette so the app always matches the queue page, regardless of
+  the user's Appearance preference (light/dark/system still works as a
+  no-visual-op so the setting keeps functioning if a light theme is added
+  later).
+*/
+:root,
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    --background: #08080a;
+    --foreground: #f2f2f4;
+    --pane: #0a0a0e;
+    --subtle-foreground: #6c6c78;
+    --faint-foreground: #5a5a66;
+    --ghost-foreground: #4a4a55;
+    --surface-hover: #22222c;
+    --card: #0d0d12;
+    --card-foreground: #f2f2f4;
+    --popover: #15151c;
+    --popover-foreground: #f2f2f4;
+    --primary: #6e56f8;
+    --primary-foreground: #ffffff;
+    --secondary: #141419;
+    --secondary-foreground: #b4b4bf;
+    --muted: #141419;
+    --muted-foreground: #8a8a96;
+    --accent: #1b1b22;
+    --accent-foreground: #f2f2f4;
+    --destructive: #e0405f;
+    --destructive-foreground: #ffffff;
+    --border: #1c1c24;
+    --border-strong: #26262f;
+    --border-hover: #3a3a46;
+    --input: #1c1c24;
+    --ring: #2e2e3a;
+    --chart-1: #6e56f8;
+    --chart-2: #2ab7f5;
+    --chart-3: #10b981;
+    --chart-4: #f0803c;
+    --chart-5: #e0405f;
+    --radius: 0.6rem;
+    --sidebar-background: #0c0c10;
+    --sidebar-foreground: #f2f2f4;
+    --sidebar-primary: #6e56f8;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #1b1b22;
+    --sidebar-accent-foreground: #f2f2f4;
+    --sidebar-border: #17171c;
+    --sidebar-ring: #2e2e3a;
+    --sidebar: #0c0c10;
 }
 
 @layer base {

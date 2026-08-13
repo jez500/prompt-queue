@@ -3,22 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PromptStatus;
+use App\Http\Requests\PromptStatusRequest;
 use App\Models\Prompt;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 class PromptStatusController extends Controller
 {
     /**
-     * Advance a freshly copied prompt from todo to implementing.
-     *
-     * Any other status is left alone: re-copying something mid-flight is not a
-     * state change, and re-copying a finished prompt must not resurrect it.
+     * Set a requested status or advance a freshly copied prompt to implementing.
      */
-    public function __invoke(Request $request, Prompt $prompt): RedirectResponse
+    public function __invoke(PromptStatusRequest $request, Prompt $prompt): RedirectResponse
     {
-        Gate::authorize('update', $prompt);
+        $status = $request->status();
+
+        if ($status !== null) {
+            $prompt->update(['status' => $status]);
+
+            return back();
+        }
 
         if ($prompt->status === PromptStatus::Todo) {
             $prompt->update(['status' => PromptStatus::Implementing]);

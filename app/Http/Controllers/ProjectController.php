@@ -60,8 +60,8 @@ class ProjectController extends Controller
             $project->delete();
         });
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Project deleted. Its prompts are in the Inbox.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Project deleted. Its prompts now have no project.')]);
 
-        return back();
+        return redirect()->route('prompts.index');
     }
 }

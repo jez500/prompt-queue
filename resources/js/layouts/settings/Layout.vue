@@ -1,71 +1,61 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import Heading from '@/components/Heading.vue';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import { toUrl } from '@/lib/utils';
+import { usePage } from '@inertiajs/vue3';
+import { useMediaQuery } from '@vueuse/core';
+import { computed, ref, watch } from 'vue';
+import SettingsNavPane from '@/components/settings/SettingsNavPane.vue';
+import AppPane from '@/components/shell/AppPane.vue';
+import PaneHeader from '@/components/shell/PaneHeader.vue';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
-import type { NavItem } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: editProfile(),
-    },
-    {
-        title: 'Security',
-        href: editSecurity(),
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-    },
-];
+const SECTION_TITLES: Record<string, string> = {
+    [new URL(editProfile().url, 'http://localhost').pathname]: 'Profile',
+    [new URL(editSecurity().url, 'http://localhost').pathname]: 'Security',
+    [new URL(editAppearance().url, 'http://localhost').pathname]: 'Appearance',
+};
 
-const { isCurrentOrParentUrl } = useCurrentUrl();
+const page = usePage();
+const narrow = useMediaQuery('(max-width: 1099px)');
+
+/**
+ * Below the narrow breakpoint the two panes share the viewport the same way
+ * the queue does: the content pane is what you land on, and the back button
+ * swaps to the nav list. Navigating to a section returns to the content.
+ */
+const showNav = ref(false);
+
+watch(
+    () => page.url,
+    () => {
+        showNav.value = false;
+    },
+);
+
+const sectionTitle = computed(
+    () =>
+        SECTION_TITLES[new URL(page.url, 'http://localhost').pathname] ??
+        'Settings',
+);
 </script>
 
 <template>
-    <div class="px-4 py-6">
-        <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
+    <SettingsNavPane v-if="!narrow || showNav" :narrow="narrow" />
+
+    <AppPane v-if="!narrow || !showNav" variant="detail" :narrow="narrow">
+        <PaneHeader
+            :eyebrow="sectionTitle"
+            :narrow="narrow"
+            @back="showNav = true"
         />
 
-        <div class="flex flex-col lg:flex-row lg:space-x-12">
-            <aside class="w-full max-w-xl lg:w-48">
-                <nav
-                    class="flex flex-col space-y-1 space-x-0"
-                    aria-label="Settings"
-                >
-                    <Button
-                        v-for="item in sidebarNavItems"
-                        :key="toUrl(item.href)"
-                        variant="ghost"
-                        :class="[
-                            'w-full justify-start',
-                            { 'bg-muted': isCurrentOrParentUrl(item.href) },
-                        ]"
-                        as-child
-                    >
-                        <Link :href="item.href">
-                            <component :is="item.icon" class="h-4 w-4" />
-                            {{ item.title }}
-                        </Link>
-                    </Button>
-                </nav>
-            </aside>
-
-            <Separator class="my-6 lg:hidden" />
-
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
-                    <slot />
-                </section>
-            </div>
+        <div
+            class="flex flex-1 flex-col overflow-y-auto"
+            :class="narrow ? 'p-4' : 'px-[26px] py-[22px]'"
+        >
+            <section class="max-w-xl space-y-12">
+                <slot />
+            </section>
         </div>
-    </div>
+    </AppPane>
 </template>

@@ -3,12 +3,7 @@ export type PromptStatus = 'todo' | 'implementing' | 'done';
 export type PromptPriority = 'low' | 'normal' | 'high';
 
 export type ProjectColor =
-    | 'slate'
-    | 'rose'
-    | 'amber'
-    | 'emerald'
-    | 'sky'
-    | 'violet';
+    'slate' | 'rose' | 'amber' | 'emerald' | 'sky' | 'violet';
 
 export type Prompt = {
     id: number;
@@ -19,6 +14,7 @@ export type Prompt = {
     priority: PromptPriority;
     position: number;
     projectId: number | null;
+    projectName: string | null;
     tags: string[];
     updatedAt: string | null;
 };

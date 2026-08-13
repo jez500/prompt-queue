@@ -1,24 +1,27 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
-import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import PromptQueueLayout from '@/layouts/prompts/PromptQueueLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Prompt Queue';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
+    /*
+      Everything behind auth renders inside the queue shell. Making it the
+      default (rather than something pages opt into) is what stops a new page
+      from quietly growing its own chrome.
+    */
     layout: (name) => {
         switch (true) {
-            case name === 'Welcome':
-                return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return [PromptQueueLayout, SettingsLayout];
             default:
-                return AppLayout;
+                return PromptQueueLayout;
         }
     },
     progress: {

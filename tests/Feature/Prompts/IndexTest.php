@@ -67,6 +67,7 @@ test('a project filter shows only that project', function () {
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->has('prompts', 1)
             ->where('prompts.0.title', 'In project')
+            ->where('prompts.0.projectName', $project->name)
         );
 
     $this->actingAs($user)

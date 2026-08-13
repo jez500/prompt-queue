@@ -35,6 +35,37 @@ test('capturing into a project files it there', function () {
     expect(Prompt::query()->sole()->project_id)->toBe($project->id);
 });
 
+test('capturing can set the initial status and priority', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('prompts.store'), [
+            'body' => 'Start in progress',
+            'status' => PromptStatus::Implementing->value,
+            'priority' => PromptPriority::High->value,
+        ])
+        ->assertRedirect();
+
+    $prompt = Prompt::query()->sole();
+
+    expect($prompt->status)->toBe(PromptStatus::Implementing)
+        ->and($prompt->priority)->toBe(PromptPriority::High);
+});
+
+test('capture status and priority must be valid', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('prompts.store'), [
+            'body' => 'Invalid metadata',
+            'status' => 'blocked',
+            'priority' => 'urgent',
+        ])
+        ->assertSessionHasErrors(['status', 'priority']);
+
+    expect(Prompt::query()->count())->toBe(0);
+});
+
 test('a new prompt goes to the top and pushes the bucket down', function () {
     $user = User::factory()->create();
     $existing = Prompt::factory()->forUser($user)->atPosition(0)->create();

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\PromptPriority;
+use App\Enums\PromptStatus;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -17,6 +19,8 @@ class PromptStoreRequest extends FormRequest
     {
         return [
             'body' => ['required', 'string', 'max:65535'],
+            'status' => ['nullable', Rule::enum(PromptStatus::class)],
+            'priority' => ['nullable', Rule::enum(PromptPriority::class)],
             'project' => [
                 'nullable',
                 'integer',
@@ -31,5 +35,29 @@ class PromptStoreRequest extends FormRequest
     public function bucketProjectId(): ?int
     {
         return $this->filled('project') ? $this->integer('project') : null;
+    }
+
+    /**
+     * The requested initial status, defaulting to Todo.
+     */
+    public function status(): PromptStatus
+    {
+        if (! $this->filled('status')) {
+            return PromptStatus::Todo;
+        }
+
+        return PromptStatus::from($this->string('status')->toString());
+    }
+
+    /**
+     * The requested initial priority, defaulting to Normal.
+     */
+    public function priority(): PromptPriority
+    {
+        if (! $this->filled('priority')) {
+            return PromptPriority::Normal;
+        }
+
+        return PromptPriority::from($this->string('priority')->toString());
     }
 }

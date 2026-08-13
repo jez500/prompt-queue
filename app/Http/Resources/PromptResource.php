@@ -27,6 +27,7 @@ class PromptResource extends JsonResource
             'priority' => $this->priority->value,
             'position' => $this->position,
             'projectId' => $this->project_id,
+            'projectName' => $this->whenLoaded('project', fn () => $this->project?->name),
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->pluck('name')->values()->all(), []),
             'updatedAt' => $this->updated_at?->toIso8601String(),
         ];

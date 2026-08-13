@@ -22,7 +22,11 @@ export function usePromptFilters(current: () => PromptFilters) {
         Object.keys(query).forEach((key) => {
             const value = query[key];
 
-            if (value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
+            if (
+                value === null ||
+                value === '' ||
+                (Array.isArray(value) && value.length === 0)
+            ) {
                 delete query[key];
             }
         });

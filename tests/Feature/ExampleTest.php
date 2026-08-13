@@ -1,7 +1,15 @@
 <?php
 
-test('returns a successful response', function () {
-    $response = $this->get(route('home'));
+use App\Models\User;
 
-    $response->assertOk();
+test('guests are redirected from home to login', function () {
+    $this->get(route('home'))->assertRedirect(route('login'));
+});
+
+test('authenticated users are redirected from home to prompts', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('home'))
+        ->assertRedirect(route('prompts.index'));
 });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Inbox, Layers, Plus } from '@lucide/vue';
+import { Layers, Plus } from '@lucide/vue';
 import { computed } from 'vue';
 import ProjectFormDialog from '@/components/projects/ProjectFormDialog.vue';
 import {
@@ -39,7 +39,7 @@ const currentProject = computed<string | null>(() => {
                 >
                     <Link :href="index()">
                         <Layers />
-                        <span>All</span>
+                        <span>All prompts</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
@@ -48,11 +48,13 @@ const currentProject = computed<string | null>(() => {
                 <SidebarMenuButton
                     as-child
                     :is-active="currentProject === 'inbox'"
-                    tooltip="Inbox"
+                    tooltip="No project"
                 >
                     <Link :href="index({ query: { project: 'inbox' } })">
-                        <Inbox />
-                        <span>Inbox</span>
+                        <span
+                            class="size-2 shrink-0 rounded-full bg-muted-foreground/45"
+                        />
+                        <span>No project</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
@@ -64,7 +66,9 @@ const currentProject = computed<string | null>(() => {
                     :tooltip="project.name"
                 >
                     <Link
-                        :href="index({ query: { project: String(project.id) } })"
+                        :href="
+                            index({ query: { project: String(project.id) } })
+                        "
                     >
                         <span
                             class="size-2 shrink-0 rounded-full"

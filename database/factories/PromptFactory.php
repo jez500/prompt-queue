@@ -64,6 +64,16 @@ class PromptFactory extends Factory
     }
 
     /**
+     * Give the prompt a specific priority.
+     */
+    public function priority(PromptPriority $priority): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'priority' => $priority,
+        ]);
+    }
+
+    /**
      * Give the prompt a specific position within its bucket.
      */
     public function atPosition(int $position): static

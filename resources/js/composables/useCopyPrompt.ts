@@ -9,7 +9,9 @@ export function useCopyPrompt() {
 
         if (!clipboard || !window.isSecureContext) {
             selectBody(prompt.id);
-            toast.error('Clipboard unavailable — the text is selected, copy it manually.');
+            toast.error(
+                'Clipboard unavailable — the text is selected, copy it manually.',
+            );
 
             return;
         }
@@ -18,7 +20,9 @@ export function useCopyPrompt() {
             await clipboard.writeText(prompt.body);
         } catch {
             selectBody(prompt.id);
-            toast.error('Copy failed — the text is selected, copy it manually.');
+            toast.error(
+                'Copy failed — the text is selected, copy it manually.',
+            );
 
             return;
         }

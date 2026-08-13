@@ -32,7 +32,7 @@ class PromptController extends Controller
             ->withStatuses($request->statuses())
             ->withPriorities($request->priorities())
             ->withTagNames($request->tagNames())
-            ->with('tags')
+            ->with(['project', 'tags'])
             ->orderBy('position')
             ->orderByDesc('id')
             ->get();
@@ -66,8 +66,8 @@ class PromptController extends Controller
             $request->user()->prompts()->create([
                 'project_id' => $projectId,
                 'body' => $request->string('body')->toString(),
-                'status' => PromptStatus::Todo,
-                'priority' => PromptPriority::Normal,
+                'status' => $request->status(),
+                'priority' => $request->priority(),
                 'position' => 0,
             ]);
         });

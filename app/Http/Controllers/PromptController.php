@@ -65,6 +65,7 @@ class PromptController extends Controller
 
             $request->user()->prompts()->create([
                 'project_id' => $projectId,
+                'title' => $request->title(),
                 'body' => $request->string('body')->toString(),
                 'status' => $request->status(),
                 'priority' => $request->priority(),
@@ -83,11 +84,12 @@ class PromptController extends Controller
         Gate::authorize('update', $prompt);
 
         $targetProjectId = $request->bucketProjectId();
+        $movesProject = $request->shouldMoveProject() && $targetProjectId !== $prompt->project_id;
 
-        DB::transaction(function () use ($request, $prompt, $targetProjectId, $syncTags): void {
+        DB::transaction(function () use ($request, $prompt, $targetProjectId, $movesProject, $syncTags): void {
             $attributes = $request->fillableAttributes();
 
-            if ($targetProjectId !== $prompt->project_id) {
+            if ($movesProject) {
                 Prompt::query()
                     ->whereBelongsTo($request->user())
                     ->inBucket($targetProjectId)
@@ -99,7 +101,9 @@ class PromptController extends Controller
 
             $prompt->update($attributes);
 
-            $syncTags($prompt, $request->user(), $request->tagNames());
+            if ($request->shouldSyncTags()) {
+                $syncTags($prompt, $request->user(), $request->tagNames());
+            }
         });
 
         return back();

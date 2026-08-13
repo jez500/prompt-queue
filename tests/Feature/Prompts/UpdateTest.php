@@ -28,6 +28,102 @@ test('a prompt can be retitled, rewritten and reprioritised', function () {
         ->and($prompt->priority)->toBe(PromptPriority::High);
 });
 
+test('a body-only update leaves every other field alone', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->forUser($user)->create();
+    $tag = Tag::factory()->forUser($user)->create(['name' => 'bug']);
+    $prompt = Prompt::factory()->forUser($user)->inProject($project)->create([
+        'title' => 'Keep me',
+        'status' => PromptStatus::Implementing,
+        'priority' => PromptPriority::High,
+    ]);
+    $prompt->tags()->attach($tag);
+
+    $this->actingAs($user)
+        ->patch(route('prompts.update', $prompt), ['body' => 'Only the body changed'])
+        ->assertSessionHasNoErrors();
+
+    $prompt->refresh();
+
+    expect($prompt->body)->toBe('Only the body changed')
+        ->and($prompt->title)->toBe('Keep me')
+        ->and($prompt->status)->toBe(PromptStatus::Implementing)
+        ->and($prompt->priority)->toBe(PromptPriority::High)
+        ->and($prompt->project_id)->toBe($project->id)
+        ->and($prompt->tags->pluck('name')->all())->toBe(['bug']);
+});
+
+test('omitting the project leaves the prompt where it is', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->forUser($user)->create();
+    $prompt = Prompt::factory()->forUser($user)->inProject($project)->atPosition(2)->create();
+
+    $this->actingAs($user)->patch(route('prompts.update', $prompt), ['body' => 'Changed']);
+
+    expect($prompt->refresh()->project_id)->toBe($project->id)
+        ->and($prompt->position)->toBe(2);
+});
+
+test('sending a null project moves the prompt to the inbox', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->forUser($user)->create();
+    $prompt = Prompt::factory()->forUser($user)->inProject($project)->create();
+
+    $this->actingAs($user)->patch(route('prompts.update', $prompt), [
+        'body' => $prompt->body,
+        'project' => null,
+    ]);
+
+    expect($prompt->refresh()->project_id)->toBeNull();
+});
+
+test('a tags-only update leaves the body alone', function () {
+    $user = User::factory()->create();
+    $prompt = Prompt::factory()->forUser($user)->create(['body' => 'Untouched body']);
+
+    $this->actingAs($user)
+        ->patch(route('prompts.update', $prompt), ['tags' => ['refactor']])
+        ->assertSessionHasNoErrors();
+
+    $prompt->refresh();
+
+    expect($prompt->body)->toBe('Untouched body')
+        ->and($prompt->tags->pluck('name')->all())->toBe(['refactor']);
+});
+
+test('omitting tags leaves the existing ones attached', function () {
+    $user = User::factory()->create();
+    $tag = Tag::factory()->forUser($user)->create(['name' => 'bug']);
+    $prompt = Prompt::factory()->forUser($user)->create();
+    $prompt->tags()->attach($tag);
+
+    $this->actingAs($user)->patch(route('prompts.update', $prompt), ['body' => 'Changed']);
+
+    expect($prompt->refresh()->tags->pluck('name')->all())->toBe(['bug']);
+});
+
+test('sending an empty tag list detaches every tag', function () {
+    $user = User::factory()->create();
+    $tag = Tag::factory()->forUser($user)->create(['name' => 'bug']);
+    $prompt = Prompt::factory()->forUser($user)->create();
+    $prompt->tags()->attach($tag);
+
+    $this->actingAs($user)->patch(route('prompts.update', $prompt), ['tags' => []]);
+
+    expect($prompt->refresh()->tags)->toHaveCount(0);
+});
+
+test('a body sent as an empty string is still rejected', function () {
+    $user = User::factory()->create();
+    $prompt = Prompt::factory()->forUser($user)->create(['body' => 'Original']);
+
+    $this->actingAs($user)
+        ->patch(route('prompts.update', $prompt), ['body' => '   '])
+        ->assertSessionHasErrors('body');
+
+    expect($prompt->refresh()->body)->toBe('Original');
+});
+
 test('clearing the title restores the body fallback', function () {
     $user = User::factory()->create();
     $prompt = Prompt::factory()->forUser($user)->create([

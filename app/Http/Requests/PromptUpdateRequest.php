@@ -18,8 +18,8 @@ class PromptUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['nullable', 'string', 'max:255'],
-            'body' => ['required', 'string', 'max:65535'],
+            'title' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'body' => ['sometimes', 'required', 'string', 'max:65535'],
             'status' => ['nullable', Rule::enum(PromptStatus::class)],
             'priority' => ['nullable', Rule::enum(PromptPriority::class)],
             'project' => [
@@ -27,7 +27,7 @@ class PromptUpdateRequest extends FormRequest
                 'integer',
                 Rule::exists('projects', 'id')->where('user_id', $this->user()->id),
             ],
-            'tags' => ['nullable', 'array'],
+            'tags' => ['sometimes', 'array'],
             'tags.*' => ['string', 'max:50'],
         ];
     }
@@ -41,19 +41,36 @@ class PromptUpdateRequest extends FormRequest
     }
 
     /**
+     * Whether the request asked for the prompt to be filed somewhere.
+     *
+     * Omitting `project` leaves the prompt where it is; sending it as null
+     * moves it to the Inbox.
+     */
+    public function shouldMoveProject(): bool
+    {
+        return $this->has('project');
+    }
+
+    /**
      * The attributes to write, excluding the project and tags which need extra work.
      *
-     * Status and priority are only included when supplied, so a partial save
-     * from the slide-over cannot silently reset them.
+     * Every field is optional: only what the request actually carried is
+     * written, so a save that changes one field cannot reset the others to a
+     * stale copy the client happened to be holding.
      *
      * @return array<string, mixed>
      */
     public function fillableAttributes(): array
     {
-        $attributes = [
-            'title' => $this->filled('title') ? $this->string('title')->toString() : null,
-            'body' => $this->string('body')->toString(),
-        ];
+        $attributes = [];
+
+        if ($this->has('title')) {
+            $attributes['title'] = $this->filled('title') ? $this->string('title')->toString() : null;
+        }
+
+        if ($this->has('body')) {
+            $attributes['body'] = $this->string('body')->toString();
+        }
 
         if ($this->filled('status')) {
             $attributes['status'] = PromptStatus::from($this->string('status')->toString());
@@ -64,6 +81,17 @@ class PromptUpdateRequest extends FormRequest
         }
 
         return $attributes;
+    }
+
+    /**
+     * Whether the request asked for the tag list to be rewritten.
+     *
+     * Omitting `tags` leaves the existing ones attached; sending an empty
+     * array detaches them all.
+     */
+    public function shouldSyncTags(): bool
+    {
+        return $this->has('tags');
     }
 
     /**

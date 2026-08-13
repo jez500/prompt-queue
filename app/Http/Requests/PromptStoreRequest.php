@@ -18,6 +18,7 @@ class PromptStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'title' => ['nullable', 'string', 'max:255'],
             'body' => ['required', 'string', 'max:65535'],
             'status' => ['nullable', Rule::enum(PromptStatus::class)],
             'priority' => ['nullable', Rule::enum(PromptPriority::class)],
@@ -35,6 +36,14 @@ class PromptStoreRequest extends FormRequest
     public function bucketProjectId(): ?int
     {
         return $this->filled('project') ? $this->integer('project') : null;
+    }
+
+    /**
+     * The title to capture with, if one was typed before the first save.
+     */
+    public function title(): ?string
+    {
+        return $this->filled('title') ? $this->string('title')->toString() : null;
     }
 
     /**

@@ -35,6 +35,16 @@ test('capturing into a project files it there', function () {
     expect(Prompt::query()->sole()->project_id)->toBe($project->id);
 });
 
+test('capturing can set a title', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('prompts.store'), ['title' => 'Billing refactor', 'body' => 'Split the service'])
+        ->assertSessionHasNoErrors();
+
+    expect(Prompt::query()->sole()->title)->toBe('Billing refactor');
+});
+
 test('capturing can set the initial status and priority', function () {
     $user = User::factory()->create();
 

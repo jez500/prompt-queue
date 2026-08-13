@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
 /*
-  ---break---
+  Space Grotesk, IBM Plex Sans and IBM Plex Mono are self-hosted by the Vite
+  fonts plugin and injected through the @fonts directive in app.blade.php —
+  see vite.config.ts. They are deliberately not @imported from a font CDN:
+  this app is self-hosted, often on a LAN, and should render correctly with
+  no outbound request.
 */
 
 @import 'tailwindcss';

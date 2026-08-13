@@ -28,10 +28,15 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
+            /*
+              Self-hosted, so a LAN or offline instance renders in the right
+              typeface and no visitor's browser has to call out to a font CDN.
+              These are the three families app.css actually asks for.
+            */
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
+                bunny('Space Grotesk', { weights: [400, 500, 600, 700] }),
+                bunny('IBM Plex Sans', { weights: [400, 500, 600, 700] }),
+                bunny('IBM Plex Mono', { weights: [400, 500] }),
             ],
         }),
         inertia(),

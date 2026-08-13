@@ -33,7 +33,11 @@ services:
 
             SESSION_DRIVER: database
             CACHE_STORE: database
-            QUEUE_CONNECTION: database
+            # The container runs one process — the web server. Nothing would
+            # drain a queue, so jobs run inline. Adding real queued or
+            # scheduled work means adding a worker process here too, or the
+            # jobs sit in the table forever with nothing reporting it.
+            QUEUE_CONNECTION: sync
 
             # Outgoing mail is only needed for password resets.
             MAIL_MAILER: ${MAIL_MAILER:-log}

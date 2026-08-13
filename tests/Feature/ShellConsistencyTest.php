@@ -162,6 +162,17 @@ it('gives every icon-only action both a tooltip and an accessible name', functio
         ->toContain('<TooltipProvider');
 });
 
+it('mounts the toaster the app posts its feedback to', function (): void {
+    /*
+      The Toaster component existed but was never mounted, so every toast()
+      call was a silent no-op — deletions, profile saves and failed autosaves
+      all reported nothing at all. Nothing failed loudly, which is why it
+      survived; pin it.
+    */
+    expect(jsSource('layouts/prompts/PromptQueueLayout.vue'))
+        ->toContain('<Toaster');
+});
+
 it('keeps the hook the clipboard fallback selects', function (): void {
     /*
       Copy falls back to selecting the body when the async Clipboard API is

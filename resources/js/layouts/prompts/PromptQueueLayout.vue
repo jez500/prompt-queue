@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, provide, ref } from 'vue';
 import PromptQueueSidebar from '@/components/prompts/PromptQueueSidebar.vue';
+import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 
@@ -71,6 +72,10 @@ onBeforeUnmount(() => {
                 @new-prompt="requestNewPrompt"
             />
             <slot />
+
+            <!-- Mounted once, at the shell root: without it every toast()
+                 call in the app is a silent no-op. -->
+            <Toaster position="bottom-right" :duration="4000" />
         </div>
     </TooltipProvider>
 </template>

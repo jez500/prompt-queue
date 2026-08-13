@@ -1,6 +1,7 @@
 import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import PromptController from '@/actions/App/Http/Controllers/PromptController';
 import PromptPriorityController from '@/actions/App/Http/Controllers/PromptPriorityController';
 import PromptStatusController from '@/actions/App/Http/Controllers/PromptStatusController';
@@ -18,9 +19,14 @@ type Options = {
 /**
  * Owns the detail pane's editable fields and autosaves them: while `isNew()`
  * it waits for a non-blank body before POSTing (the store endpoint requires
- * one), then patches the title in if one was already typed. Once persisted,
- * further edits debounce into PATCH requests, matching the mock's
- * "Auto-saves / Saving… / Saved" affordance but tied to real request state.
+ * one), sending any title along with it. Once persisted, further edits
+ * debounce into PATCH requests carrying only the title and body — status,
+ * priority and tags have their own endpoints, and echoing them back would
+ * revert whatever was changed there while typing.
+ *
+ * A save that fails says so: the indicator reads "Not saved", a toast
+ * explains, and the edit stays pending so the next keystroke retries it
+ * rather than being overwritten by the server's older copy.
  */
 export function usePromptAutosave(options: Options) {
     const { prompt, isNew, projectId, onCreated } = options;
@@ -32,6 +38,7 @@ export function usePromptAutosave(options: Options) {
     const priority = ref<PromptPriority>('normal');
     const saving = ref(false);
     const savedAt = ref<number | null>(null);
+    const failed = ref(false);
     const creating = ref(false);
 
     const lastSaved = ref<Snapshot>({ title: '', body: '' });
@@ -108,26 +115,44 @@ export function usePromptAutosave(options: Options) {
             return;
         }
 
+        /*
+          Restored if the request fails, so the edit stays pending: the next
+          keystroke retries it, and the watcher above keeps treating what is
+          on screen as newer than the server's copy.
+        */
+        const previous = lastSaved.value;
+
         saving.value = true;
         lastSaved.value = { title: title.value, body: body.value };
 
+        /*
+          Only the fields this editor owns. Echoing status/priority/project/
+          tags back would overwrite a change made from a pill or the tag row
+          with whatever the last server payload happened to hold.
+        */
         router.patch(
             PromptController.update.url({ prompt: target.id }),
             {
                 title: title.value.trim() === '' ? null : title.value,
                 body: body.value,
-                status: target.status,
-                priority: target.priority,
-                project: target.projectId,
-                tags: target.tags,
             },
             {
                 preserveScroll: true,
                 preserveState: true,
                 only: ['prompts'],
+                onSuccess: () => {
+                    failed.value = false;
+                    savedAt.value = Date.now();
+                },
+                onError: () => {
+                    lastSaved.value = previous;
+                    failed.value = true;
+                    toast.error(
+                        'Could not save — your changes are still here.',
+                    );
+                },
                 onFinish: () => {
                     saving.value = false;
-                    savedAt.value = Date.now();
                 },
             },
         );
@@ -148,6 +173,10 @@ export function usePromptAutosave(options: Options) {
         router.post(
             PromptController.store.url(),
             {
+                /* Sent with the create: a follow-up patch carrying only a
+                   title is rejected, because the update endpoint needs the
+                   body it would not be sending. */
+                title: pendingTitle === '' ? null : pendingTitle,
                 body: body.value,
                 status: status.value,
                 priority: priority.value,
@@ -162,41 +191,25 @@ export function usePromptAutosave(options: Options) {
                         (entry) => !knownIds.has(entry.id),
                     );
 
-                    creating.value = false;
-
                     if (!created) {
-                        saving.value = false;
-
                         return;
                     }
 
+                    // Don't clobber edits made while the create was in flight.
                     justCreatedId.value = created.id;
                     justCreatedSnapshot.value = sentSnapshot;
 
-                    if (pendingTitle === '') {
-                        saving.value = false;
-                        savedAt.value = Date.now();
-                        onCreated(created.id);
-
-                        return;
-                    }
-
-                    router.patch(
-                        PromptController.update.url({ prompt: created.id }),
-                        { title: pendingTitle },
-                        {
-                            preserveScroll: true,
-                            preserveState: true,
-                            only: ['prompts'],
-                            onFinish: () => {
-                                saving.value = false;
-                                savedAt.value = Date.now();
-                                onCreated(created.id);
-                            },
-                        },
-                    );
+                    failed.value = false;
+                    savedAt.value = Date.now();
+                    onCreated(created.id);
                 },
                 onError: () => {
+                    failed.value = true;
+                    toast.error(
+                        'Could not save — your changes are still here.',
+                    );
+                },
+                onFinish: () => {
                     creating.value = false;
                     saving.value = false;
                 },
@@ -238,7 +251,12 @@ export function usePromptAutosave(options: Options) {
         router.patch(
             PromptStatusController.url({ prompt: target.id }),
             { status: value },
-            { preserveScroll: true, preserveState: true, only: ['prompts'] },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['prompts'],
+                onError: () => toast.error('Could not update the status.'),
+            },
         );
     };
 
@@ -258,7 +276,12 @@ export function usePromptAutosave(options: Options) {
         router.patch(
             PromptPriorityController.url({ prompt: target.id }),
             { priority: value },
-            { preserveScroll: true, preserveState: true, only: ['prompts'] },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['prompts'],
+                onError: () => toast.error('Could not update the priority.'),
+            },
         );
     };
 
@@ -269,17 +292,20 @@ export function usePromptAutosave(options: Options) {
             return;
         }
 
+        /*
+          Tags only. Echoing the body back from the last server payload would
+          undo whatever has been typed since — and because the editor already
+          counts that text as saved, it would not be sent again.
+        */
         router.patch(
             PromptController.update.url({ prompt: target.id }),
+            { tags },
             {
-                title: target.rawTitle,
-                body: target.body,
-                status: target.status,
-                priority: target.priority,
-                project: target.projectId,
-                tags,
+                preserveScroll: true,
+                preserveState: true,
+                only: ['prompts'],
+                onError: () => toast.error('Could not update tags.'),
             },
-            { preserveScroll: true, preserveState: true, only: ['prompts'] },
         );
     };
 
@@ -292,6 +318,7 @@ export function usePromptAutosave(options: Options) {
 
         router.delete(PromptController.destroy.url({ prompt: target.id }), {
             preserveScroll: true,
+            onError: () => toast.error('Could not delete the prompt.'),
         });
     };
 
@@ -302,6 +329,7 @@ export function usePromptAutosave(options: Options) {
         priority,
         saving,
         savedAt,
+        failed,
         setStatus,
         setPriority,
         updateTags,

@@ -98,6 +98,10 @@ const saveLabel = computed(() => {
         return 'Saving…';
     }
 
+    if (autosave.failed.value) {
+        return 'Not saved';
+    }
+
     if (autosave.savedAt.value) {
         return 'Saved';
     }
@@ -118,21 +122,29 @@ const copyLabel = computed(() => {
     return compact.value ? 'Copy' : 'Copy prompt';
 });
 
-const saveDotClass = computed(() =>
-    autosave.saving.value
-        ? 'bg-muted-foreground'
-        : autosave.savedAt.value
-          ? 'bg-[#6FCFA1]'
-          : 'bg-ghost-foreground',
-);
+const saveDotClass = computed(() => {
+    if (autosave.saving.value) {
+        return 'bg-muted-foreground';
+    }
 
-const saveTextClass = computed(() =>
-    autosave.saving.value
-        ? 'text-muted-foreground'
-        : autosave.savedAt.value
-          ? 'text-[#6FCFA1]'
-          : 'text-ghost-foreground',
-);
+    if (autosave.failed.value) {
+        return 'bg-[#FF8B9C]';
+    }
+
+    return autosave.savedAt.value ? 'bg-[#6FCFA1]' : 'bg-ghost-foreground';
+});
+
+const saveTextClass = computed(() => {
+    if (autosave.saving.value) {
+        return 'text-muted-foreground';
+    }
+
+    if (autosave.failed.value) {
+        return 'text-[#FF8B9C]';
+    }
+
+    return autosave.savedAt.value ? 'text-[#6FCFA1]' : 'text-ghost-foreground';
+});
 
 const handleSetStatus = (value: AcceptableValue): void => {
     if (typeof value === 'string') {

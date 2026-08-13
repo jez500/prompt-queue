@@ -1,0 +1,97 @@
+# Prompt Queue — self-hosted deployment.
+#
+#   1. cp .env.docker.example .env
+#   2. docker run --rm jez500/prompt-queue php artisan key:generate --show
+#      ...and paste the result into APP_KEY in .env
+#   3. docker compose up -d
+#   4. docker compose exec app php artisan pq:create-user
+#
+# Step 2 uses plain `docker run` rather than `docker compose run` on purpose:
+# the APP_KEY guard below is evaluated for every compose subcommand, so
+# compose cannot be used to produce the key it is demanding.
+#
+# Data lives in the `prompt-queue-data` volume. Back it up by copying
+# /app/database out of the container.
+
+services:
+    app:
+        image: jez500/prompt-queue:latest
+        # Swap the line above for this to build from a checkout instead:
+        # build: .
+        restart: unless-stopped
+        ports:
+            - '${APP_PORT:-8080}:8080'
+        environment:
+            APP_NAME: ${APP_NAME:-Prompt Queue}
+            APP_KEY: ${APP_KEY:?Run "docker compose run --rm app php artisan key:generate --show" and set APP_KEY in .env}
+            APP_URL: ${APP_URL:-http://localhost:8080}
+            APP_ENV: production
+            APP_DEBUG: 'false'
+
+            DB_CONNECTION: sqlite
+            DB_DATABASE: /app/database/database.sqlite
+
+            SESSION_DRIVER: database
+            CACHE_STORE: database
+            QUEUE_CONNECTION: database
+
+            # Outgoing mail is only needed for password resets.
+            MAIL_MAILER: ${MAIL_MAILER:-log}
+            MAIL_HOST: ${MAIL_HOST:-}
+            MAIL_PORT: ${MAIL_PORT:-}
+            MAIL_USERNAME: ${MAIL_USERNAME:-}
+            MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+            MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-hello@example.com}
+        volumes:
+            - prompt-queue-data:/app/database
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'php',
+                    '-r',
+                    'exit(@file_get_contents("http://127.0.0.1:8080/up") === false ? 1 : 0);',
+                ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 20s
+
+# ---------------------------------------------------------------------------
+# Using MySQL instead of SQLite
+# ---------------------------------------------------------------------------
+# SQLite is the default and is a good fit for the single-user workload this
+# app is built for. To switch to MySQL: uncomment the `db` service and the
+# `prompt-queue-db` volume below, swap the DB_* variables on `app` for the
+# block below, and add the `depends_on` stanza.
+#
+#     depends_on:
+#         db:
+#             condition: service_healthy
+#
+#     DB_CONNECTION: mysql
+#     DB_HOST: db
+#     DB_PORT: 3306
+#     DB_DATABASE: ${DB_DATABASE:-prompt_queue}
+#     DB_USERNAME: ${DB_USERNAME:-prompt_queue}
+#     DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+#
+#   db:
+#       image: mysql:8
+#       restart: unless-stopped
+#       environment:
+#           MYSQL_DATABASE: ${DB_DATABASE:-prompt_queue}
+#           MYSQL_USER: ${DB_USERNAME:-prompt_queue}
+#           MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+#           MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+#       volumes:
+#           - prompt-queue-db:/var/lib/mysql
+#       healthcheck:
+#           test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+#           interval: 10s
+#           timeout: 5s
+#           retries: 10
+
+volumes:
+    prompt-queue-data:
+    # prompt-queue-db:

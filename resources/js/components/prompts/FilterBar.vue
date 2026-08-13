@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import type { Ref } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
+import { shortcutHint } from '@/composables/useKeyboardShortcuts';
 import {
     PROMPT_PRIORITY_LABELS,
     PROMPT_PRIORITY_QUEUE_PILL_CLASSES,
@@ -23,6 +25,18 @@ const emit = defineEmits<{
 const page = usePage();
 const term = ref(filters.q ?? '');
 const searchFocused = ref(false);
+const searchInput = ref<HTMLInputElement | null>(null);
+
+/* Focused by the search shortcut, signalled from the shell. */
+const searchSignal = inject<Ref<number>>('promptQueueSearch');
+
+watch(
+    () => searchSignal?.value,
+    () => {
+        searchInput.value?.focus();
+        searchInput.value?.select();
+    },
+);
 
 watch(
     () => filters.q,
@@ -43,6 +57,7 @@ const inactivePillClass =
     <div class="flex flex-col gap-2.5">
         <div class="relative w-full">
             <input
+                ref="searchInput"
                 v-model="term"
                 type="search"
                 placeholder="Search prompts…"
@@ -55,7 +70,7 @@ const inactivePillClass =
                 v-if="!term && !searchFocused"
                 class="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 font-mono text-[10.5px] text-faint-foreground"
             >
-                ⌘K
+                {{ shortcutHint('search') }}
             </span>
         </div>
 

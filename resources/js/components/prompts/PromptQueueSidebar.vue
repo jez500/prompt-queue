@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useInitials } from '@/composables/useInitials';
+import { shortcutHint } from '@/composables/useKeyboardShortcuts';
 import { useProjectScopeNav } from '@/composables/useProjectScopeNav';
 import {
     PROJECT_BORDER_CLASSES,
@@ -79,7 +80,7 @@ const { items } = useProjectScopeNav();
             <span class="text-[15px] leading-none">+</span>
             <span v-if="!collapsed" class="flex-1 text-left">New prompt</span>
             <span v-if="!collapsed" class="font-mono text-[11px] opacity-75">
-                N
+                {{ shortcutHint('new') }}
             </span>
         </button>
 

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { Check, RotateCcw, Trash2 } from '@lucide/vue';
-import { computed, nextTick, ref, watch } from 'vue';
+import type { Ref } from 'vue';
+import { computed, inject, nextTick, ref, watch } from 'vue';
 import PromptPriorityPill from '@/components/prompts/PromptPriorityPill.vue';
 import PromptStatusPill from '@/components/prompts/PromptStatusPill.vue';
 import AppPane from '@/components/shell/AppPane.vue';
@@ -12,6 +13,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useCopyPrompt } from '@/composables/useCopyPrompt';
+import { shortcutHint } from '@/composables/useKeyboardShortcuts';
 import { usePromptAutosave } from '@/composables/usePromptAutosave';
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 import { PROJECT_DOT_CLASSES } from '@/lib/projectColors';
@@ -149,6 +151,18 @@ const handleCopy = async (): Promise<void> => {
     }, 1400);
 };
 
+/* The copy shortcut, signalled from the shell. */
+const copySignal = inject<Ref<number>>('promptQueueCopy');
+
+watch(
+    () => copySignal?.value,
+    (value, oldValue) => {
+        if (value !== undefined && oldValue !== undefined && !isNew) {
+            void handleCopy();
+        }
+    },
+);
+
 const handleDelete = (): void => {
     if (!window.confirm('Delete this prompt? This cannot be undone.')) {
         return;
@@ -189,8 +203,9 @@ const removeTag = (name: string): void => {
                 >
                     <span class="text-[13px]">+</span>
                     <span>New</span>
-                    <span class="font-mono text-[10.5px] text-faint-foreground"
-                        >N</span
+                    <span
+                        class="font-mono text-[10.5px] text-faint-foreground"
+                        >{{ shortcutHint('new') }}</span
                     >
                 </button>
                 <div class="ml-1 flex items-center gap-1.5">
@@ -249,7 +264,9 @@ const removeTag = (name: string): void => {
                         @click="handleCopy"
                     >
                         <span>{{ copyLabel }}</span>
-                        <span class="font-mono text-[11px] opacity-75">⌘C</span>
+                        <span class="font-mono text-[11px] opacity-75">{{
+                            shortcutHint('copy')
+                        }}</span>
                     </button>
                 </template>
             </PaneHeader>

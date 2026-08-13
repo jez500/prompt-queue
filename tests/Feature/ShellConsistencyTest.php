@@ -195,6 +195,36 @@ it('gives every icon-only action both a tooltip and an accessible name', functio
         ->toContain('<TooltipProvider');
 });
 
+it('renders keyboard hints from the bindings that implement them', function (): void {
+    /*
+      The UI advertised ⌘K and ⌘C for a year with nothing bound to either.
+      Hints now render through shortcutHint(), so a chip cannot claim a
+      shortcut the composable does not define.
+    */
+    $shortcuts = jsSource('composables/useKeyboardShortcuts.ts');
+
+    foreach (['new', 'search', 'copy'] as $id) {
+        expect($shortcuts)->toContain("id: '{$id}'");
+    }
+
+    $chips = [
+        'components/prompts/FilterBar.vue' => 'search',
+        'components/prompts/PromptDetailPane.vue' => 'copy',
+        'components/prompts/PromptQueueSidebar.vue' => 'new',
+    ];
+
+    foreach ($chips as $path => $id) {
+        $source = jsSource($path);
+
+        expect($source)
+            ->toContain("shortcutHint('{$id}')")
+            ->and($source)->not->toMatch(
+                '/>\s*(⌘K|⌘C)\s*</u',
+                "Render the hint in {$path} from shortcutHint(), not as literal text."
+            );
+    }
+});
+
 it('mounts the toaster the app posts its feedback to', function (): void {
     /*
       The Toaster component existed but was never mounted, so every toast()

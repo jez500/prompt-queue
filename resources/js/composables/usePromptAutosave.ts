@@ -37,6 +37,7 @@ export function usePromptAutosave(options: Options) {
     const lastSaved = ref<Snapshot>({ title: '', body: '' });
     const justCreatedId = ref<number | null>(null);
     const justCreatedSnapshot = ref<Snapshot>({ title: '', body: '' });
+    const editedId = ref<number | null>(null);
 
     const current = computed(() => prompt());
 
@@ -46,21 +47,49 @@ export function usePromptAutosave(options: Options) {
     watch(
         current,
         (value) => {
+            const incomingId = value?.id ?? null;
+            const switchedPrompt = incomingId !== editedId.value;
+
             if (value && value.id === justCreatedId.value) {
                 // We just created this prompt ourselves — don't clobber
                 // edits made while the create request was in flight.
                 lastSaved.value = justCreatedSnapshot.value;
                 justCreatedId.value = null;
+                editedId.value = incomingId;
 
                 return;
             }
 
-            title.value = value?.rawTitle ?? '';
-            body.value = value?.body ?? '';
+            // Status and priority are chosen from dropdowns rather than typed,
+            // so following the server costs nobody their caret position.
             status.value = value?.status ?? 'todo';
             priority.value = value?.priority ?? 'normal';
+
+            if (!switchedPrompt) {
+                /*
+                  Same prompt, refreshed data — nearly always the echo of our
+                  own autosave. Adopting it would replace whatever has been
+                  typed since the request went out, and because the string
+                  differs Vue rewrites the textarea and throws the caret to the
+                  end. Only take the server's copy when nothing is pending.
+                */
+                const hasPendingEdits =
+                    title.value !== lastSaved.value.title ||
+                    body.value !== lastSaved.value.body;
+
+                if (hasPendingEdits) {
+                    return;
+                }
+            }
+
+            title.value = value?.rawTitle ?? '';
+            body.value = value?.body ?? '';
             lastSaved.value = { title: title.value, body: body.value };
-            savedAt.value = null;
+            editedId.value = incomingId;
+
+            if (switchedPrompt) {
+                savedAt.value = null;
+            }
         },
         { immediate: true },
     );

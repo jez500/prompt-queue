@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { useMediaQuery } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import SettingsNavPane from '@/components/settings/SettingsNavPane.vue';
 import AppPane from '@/components/shell/AppPane.vue';
 import PaneHeader from '@/components/shell/PaneHeader.vue';
+import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
@@ -16,7 +16,7 @@ const SECTION_TITLES: Record<string, string> = {
 };
 
 const page = usePage();
-const narrow = useMediaQuery('(max-width: 1099px)');
+const { narrow } = useShellBreakpoints();
 
 /**
  * Below the narrow breakpoint the two panes share the viewport the same way

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { useMediaQuery } from '@vueuse/core';
 import { computed, inject, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import ProjectEditSheet from '@/components/projects/ProjectEditSheet.vue';
 import PromptDetailPane from '@/components/prompts/PromptDetailPane.vue';
 import PromptListPane from '@/components/prompts/PromptListPane.vue';
 import { usePromptFilters } from '@/composables/usePromptFilters';
+import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 import { PROJECT_DOT_CLASSES } from '@/lib/projectColors';
 import type {
     Project,
@@ -23,7 +23,7 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const narrow = useMediaQuery('(max-width: 1099px)');
+const { narrow } = useShellBreakpoints();
 
 const selectedId = ref<number | 'new' | null>(props.prompts[0]?.id ?? null);
 const openDetail = ref(false);
@@ -90,7 +90,7 @@ const heading = computed<string>(() => {
 const scopeDotClass = computed<string>(() =>
     selectedProject.value
         ? PROJECT_DOT_CLASSES[selectedProject.value.color]
-        : 'bg-[#5A5A66]',
+        : 'bg-faint-foreground',
 );
 
 const selected = computed<Prompt | null>(() => {

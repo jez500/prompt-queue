@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { useMediaQuery } from '@vueuse/core';
 import { onBeforeUnmount, onMounted, provide, ref } from 'vue';
 import PromptQueueSidebar from '@/components/prompts/PromptQueueSidebar.vue';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 
 const SIDEBAR_STORAGE_KEY = 'pq.sidebar';
 
 const collapsed = ref(false);
-const narrow = useMediaQuery('(max-width: 1099px)');
+const { narrow } = useShellBreakpoints();
 const newPromptSignal = ref(0);
 
 provide('promptQueueNewPrompt', newPromptSignal);
@@ -59,15 +60,17 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div
-        class="relative flex h-screen w-full overflow-hidden bg-background font-sans text-foreground"
-    >
-        <PromptQueueSidebar
-            v-if="!narrow"
-            :collapsed="collapsed"
-            @toggle="toggleSidebar"
-            @new-prompt="requestNewPrompt"
-        />
-        <slot />
-    </div>
+    <TooltipProvider :delay-duration="300">
+        <div
+            class="relative flex h-screen w-full overflow-hidden bg-background font-sans text-foreground"
+        >
+            <PromptQueueSidebar
+                v-if="!narrow"
+                :collapsed="collapsed"
+                @toggle="toggleSidebar"
+                @new-prompt="requestNewPrompt"
+            />
+            <slot />
+        </div>
+    </TooltipProvider>
 </template>

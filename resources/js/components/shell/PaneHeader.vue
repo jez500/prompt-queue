@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
+
 /**
  * The bordered header row at the top of a detail pane.
  *
  * `eyebrow` renders the small uppercase mono label; the default slot carries
  * the leading controls and the `actions` slot is pushed to the trailing edge.
  * On narrow viewports a back button appears when `onBack` is bound, since the
- * list pane is hidden at that width.
+ * list pane is hidden at that width. The eyebrow is the first thing dropped in
+ * the compact band — it is decoration, and the row must stay on one line.
  */
 const { eyebrow, narrow = false } = defineProps<{
     eyebrow?: string;
@@ -13,12 +16,14 @@ const { eyebrow, narrow = false } = defineProps<{
 }>();
 
 const emit = defineEmits<{ back: [] }>();
+
+const { compact } = useShellBreakpoints();
 </script>
 
 <template>
     <div
-        class="flex min-h-[60px] flex-none flex-wrap items-center gap-2.5 border-b border-sidebar-border"
-        :class="narrow ? 'px-3.5' : 'px-6'"
+        class="flex min-h-[60px] flex-none flex-nowrap items-center gap-2.5 border-b border-sidebar-border"
+        :class="narrow ? 'px-3.5' : compact ? 'px-4' : 'px-6'"
     >
         <button
             v-if="narrow"
@@ -31,8 +36,8 @@ const emit = defineEmits<{ back: [] }>();
         </button>
 
         <div
-            v-if="eyebrow"
-            class="font-mono text-[11px] tracking-[0.08em] text-faint-foreground uppercase"
+            v-if="eyebrow && !compact"
+            class="flex-none font-mono text-[11px] tracking-[0.08em] text-faint-foreground uppercase"
         >
             {{ eyebrow }}
         </div>

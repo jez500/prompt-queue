@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
+import { Check, RotateCcw, Trash2 } from '@lucide/vue';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, nextTick, ref, watch } from 'vue';
 import AppPane from '@/components/shell/AppPane.vue';
@@ -11,8 +12,14 @@ import {
     DropdownMenuRadioItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useCopyPrompt } from '@/composables/useCopyPrompt';
 import { usePromptAutosave } from '@/composables/usePromptAutosave';
+import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 import { PROJECT_DOT_CLASSES } from '@/lib/projectColors';
 import {
     PROMPT_PRIORITY_LABELS,
@@ -43,6 +50,7 @@ const emit = defineEmits<{
 
 const page = usePage();
 const { copy } = useCopyPrompt();
+const { compact } = useShellBreakpoints();
 
 const statuses: PromptStatus[] = ['todo', 'implementing', 'done'];
 const priorities: PromptPriority[] = ['high', 'normal', 'low'];
@@ -95,6 +103,19 @@ const saveLabel = computed(() => {
     }
 
     return 'Auto-saves';
+});
+
+const doneToggleLabel = computed(() =>
+    prompt?.status === 'done' ? 'Reopen' : 'Mark done',
+);
+
+/* The header must stay on one line in the compact band, so the label sheds. */
+const copyLabel = computed(() => {
+    if (copiedId.value === prompt?.id) {
+        return 'Copied';
+    }
+
+    return compact.value ? 'Copy' : 'Copy prompt';
 });
 
 const saveDotClass = computed(() =>
@@ -201,31 +222,51 @@ const removeTag = (name: string): void => {
                 </div>
 
                 <template #actions>
-                    <button
-                        v-if="!isNew"
-                        type="button"
-                        class="flex h-8 items-center rounded-[9px] border border-border-strong px-3 text-[13px] font-semibold text-muted-foreground hover:border-[#5A2733] hover:text-[#FF8B9C]"
-                        @click="handleDelete"
-                    >
-                        Delete
-                    </button>
-                    <button
-                        v-if="!isNew && prompt"
-                        type="button"
-                        class="flex h-8 items-center justify-center rounded-[9px] border border-border-strong px-3.5 text-[13px] font-semibold text-secondary-foreground hover:border-border-hover hover:text-foreground"
-                        @click="toggleDone"
-                    >
-                        {{ prompt.status === 'done' ? 'Reopen' : 'Mark done' }}
-                    </button>
+                    <Tooltip v-if="!isNew">
+                        <TooltipTrigger as-child>
+                            <button
+                                type="button"
+                                aria-label="Delete prompt"
+                                class="flex size-8 flex-none items-center justify-center rounded-[9px] border border-border-strong text-muted-foreground hover:border-[#5A2733] hover:text-[#FF8B9C]"
+                                @click="handleDelete"
+                            >
+                                <Trash2 class="size-4" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete prompt</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip v-if="!isNew && prompt">
+                        <TooltipTrigger as-child>
+                            <button
+                                type="button"
+                                :aria-label="doneToggleLabel"
+                                class="flex size-8 flex-none items-center justify-center rounded-[9px] border border-border-strong text-secondary-foreground"
+                                :class="
+                                    prompt.status === 'done'
+                                        ? 'hover:border-border-hover hover:text-foreground'
+                                        : 'hover:border-[#2E7D5B] hover:text-[#6FCFA1]'
+                                "
+                                @click="toggleDone"
+                            >
+                                <RotateCcw
+                                    v-if="prompt.status === 'done'"
+                                    class="size-4"
+                                />
+                                <Check v-else class="size-4" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>{{ doneToggleLabel }}</TooltipContent>
+                    </Tooltip>
+
                     <button
                         type="button"
                         :disabled="isNew || !prompt"
-                        class="flex h-8 items-center gap-2.5 rounded-[9px] bg-primary px-4.5 text-[13px] font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                        class="flex h-8 flex-none items-center gap-2.5 rounded-[9px] bg-primary text-[13px] font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                        :class="compact ? 'px-3' : 'px-4.5'"
                         @click="handleCopy"
                     >
-                        <span>{{
-                            copiedId === prompt?.id ? 'Copied' : 'Copy prompt'
-                        }}</span>
+                        <span>{{ copyLabel }}</span>
                         <span class="font-mono text-[11px] opacity-75">⌘C</span>
                     </button>
                 </template>
@@ -281,36 +322,6 @@ const removeTag = (name: string): void => {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <Link
-                        v-if="!isNew"
-                        :href="projectHref"
-                        class="flex items-center gap-1.5 text-[12.5px] text-muted-foreground hover:text-foreground"
-                    >
-                        <span
-                            class="size-1.5 rounded-full"
-                            :class="
-                                project
-                                    ? PROJECT_DOT_CLASSES[project.color]
-                                    : 'bg-faint-foreground'
-                            "
-                        />
-                        {{ project?.name ?? 'No project' }}
-                    </Link>
-                    <div
-                        v-else
-                        class="flex items-center gap-1.5 text-[12.5px] text-muted-foreground"
-                    >
-                        <span
-                            class="size-1.5 rounded-full"
-                            :class="
-                                project
-                                    ? PROJECT_DOT_CLASSES[project.color]
-                                    : 'bg-faint-foreground'
-                            "
-                        />
-                        {{ project?.name ?? 'No project' }}
-                    </div>
-
                     <DropdownMenu>
                         <DropdownMenuTrigger as-child>
                             <button
@@ -349,6 +360,36 @@ const removeTag = (name: string): void => {
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
+
+                    <Link
+                        v-if="!isNew"
+                        :href="projectHref"
+                        class="flex items-center gap-1.5 text-[12.5px] text-muted-foreground hover:text-foreground"
+                    >
+                        <span
+                            class="size-1.5 rounded-full"
+                            :class="
+                                project
+                                    ? PROJECT_DOT_CLASSES[project.color]
+                                    : 'bg-faint-foreground'
+                            "
+                        />
+                        {{ project?.name ?? 'No project' }}
+                    </Link>
+                    <div
+                        v-else
+                        class="flex items-center gap-1.5 text-[12.5px] text-muted-foreground"
+                    >
+                        <span
+                            class="size-1.5 rounded-full"
+                            :class="
+                                project
+                                    ? PROJECT_DOT_CLASSES[project.color]
+                                    : 'bg-faint-foreground'
+                            "
+                        />
+                        {{ project?.name ?? 'No project' }}
+                    </div>
                 </div>
 
                 <input

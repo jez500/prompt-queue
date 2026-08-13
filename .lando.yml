@@ -1,0 +1,116 @@
+name: prompt-queue
+
+# No recipe on purpose. The `laravel` recipe insists on building a database
+# service — `database: sqlite` and `database: none` both fail, because it
+# resolves the value to a `laravel-<value>` service type that does not exist.
+# This app uses SQLite, so defining the one service directly avoids running a
+# MySQL container that nothing would ever connect to.
+
+services:
+    appserver:
+        type: php:8.3
+        # Apache runs inside this container. `via: nginx` spawns a separate
+        # nginx sidecar that reaches PHP over the `fpm` network alias, and on
+        # Docker 29 that sidecar does not get attached to the project network
+        # — it dies with `host not found in upstream "fpm"`. Apache has no
+        # cross-container hop, so it sidesteps the problem entirely.
+        via: apache
+        webroot: public
+        composer_version: '2'
+        xdebug: false
+
+        # *.lndo.site is on Chrome's HSTS preload list, so the browser always
+        # upgrades to HTTPS. Without certs the proxy has no :443 route and
+        # every request 404s, even though plain HTTP works fine under curl.
+        ssl: true
+
+        # Vite has to run alongside PHP: the Wayfinder plugin shells out to
+        # `php artisan wayfinder:generate` during the build, so a separate
+        # node service could not run it.
+        build_as_root:
+            - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+            - apt-get install -y nodejs
+
+        build:
+            - composer install
+            - npm install
+
+        overrides:
+            environment:
+                # Vite binds 0.0.0.0 inside the container, and without this the
+                # plugin writes "http://0.0.0.0:5273" into public/hot — an
+                # address no browser can fetch from. vite.config.ts reads this
+                # and is inert when it is unset, so plain `npm run dev` on the
+                # host is unaffected.
+                VITE_DEV_SERVER_ORIGIN: 'http://localhost:5273'
+            ports:
+                # Vite dev server, so HMR reaches the browser on the host.
+                #
+                # 5273 rather than Vite's default 5173, which is often already
+                # taken by another Lando project on the same machine. Host and
+                # container use the same number so the URL Vite writes into
+                # public/hot is valid from the browser without extra config.
+                - '5273:5273'
+
+# Without a recipe Lando assigns no hostname, so map one explicitly.
+proxy:
+    appserver:
+        - prompt-queue.lndo.site
+
+tooling:
+    artisan:
+        service: appserver
+        cmd: php artisan
+        description: Run an artisan command
+    composer:
+        service: appserver
+        description: Run a composer command
+    npm:
+        service: appserver
+        description: Run an npm command
+    npx:
+        service: appserver
+        description: Run an npx command
+    node:
+        service: appserver
+        description: Run a node command
+
+    vite:
+        service: appserver
+        cmd: npm run dev -- --host 0.0.0.0 --port 5273 --strictPort
+        description: Start the Vite dev server with HMR
+
+    test:
+        service: appserver
+        cmd: php artisan test --compact
+        description: Run the Pest suite
+
+    check:
+        service: appserver
+        cmd: composer ci:check
+        description: Run every check CI runs
+
+    pint:
+        service: appserver
+        cmd: vendor/bin/pint
+        description: Fix PHP code style
+
+    phpstan:
+        service: appserver
+        cmd: vendor/bin/phpstan analyse
+        description: Run static analysis
+
+    create-user:
+        service: appserver
+        cmd: php artisan pq:create-user
+        description: Create a login (registration is closed)
+
+    setup:
+        service: appserver
+        description: Prepare a fresh checkout — env, key, database, assets
+        cmd:
+            - php -r "file_exists('.env') || copy('.env.example', '.env');"
+            - php artisan key:generate --force
+            - php -r "touch('database/database.sqlite');"
+            - php artisan migrate --force
+            - npm run build

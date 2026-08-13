@@ -1,5 +1,11 @@
 import type { PromptPriority } from '@/types';
 
+/**
+ * Every priority, highest first — the order they are offered in menus and
+ * filters. Declared once so a new case cannot reach some lists and miss others.
+ */
+export const PROMPT_PRIORITIES: PromptPriority[] = ['high', 'normal', 'low'];
+
 export const PROMPT_PRIORITY_LABELS: Record<PromptPriority, string> = {
     high: 'High',
     normal: 'Normal',

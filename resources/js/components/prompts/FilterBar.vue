@@ -36,7 +36,7 @@ const priorities: PromptPriority[] = ['high', 'normal', 'low'];
 const tags = computed(() => page.props.tags);
 
 const inactivePillClass =
-    'border border-[#22222A] bg-transparent text-[#8A8A96] hover:border-[#3A3A46] hover:text-[#F2F2F4]';
+    'border border-border bg-transparent text-muted-foreground hover:border-border-hover hover:text-foreground';
 </script>
 
 <template>
@@ -46,14 +46,14 @@ const inactivePillClass =
                 v-model="term"
                 type="search"
                 placeholder="Search prompts…"
-                class="h-9 w-full rounded-xl border border-[#22222A] bg-transparent pr-11 pl-3.5 font-sans text-sm text-[#F2F2F4] outline-none placeholder:text-[#4A4A55] focus:border-[#3A3A46]"
+                class="h-9 w-full rounded-xl border border-border bg-transparent pr-11 pl-3.5 font-sans text-sm text-foreground outline-none placeholder:text-ghost-foreground focus:border-border-hover"
                 @input="emit('search', term)"
                 @focus="searchFocused = true"
                 @blur="searchFocused = false"
             />
             <span
                 v-if="!term && !searchFocused"
-                class="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 font-mono text-[10.5px] text-[#5A5A66]"
+                class="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 font-mono text-[10.5px] text-faint-foreground"
             >
                 ⌘K
             </span>
@@ -102,7 +102,7 @@ const inactivePillClass =
                     class="flex h-[27px] items-center rounded-full px-2.5 text-xs font-medium"
                     :class="
                         filters.tags.includes(tag)
-                            ? 'border border-[#6E56F8]/60 bg-[#6E56F8]/15 text-[#C6BBFF]'
+                            ? 'border border-primary/60 bg-primary/15 text-primary-soft'
                             : inactivePillClass
                     "
                     @click="emit('toggleTag', tag)"

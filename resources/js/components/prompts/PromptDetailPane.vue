@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { Check, RotateCcw, Trash2 } from '@lucide/vue';
-import type { AcceptableValue } from 'reka-ui';
 import { computed, nextTick, ref, watch } from 'vue';
+import PromptPriorityPill from '@/components/prompts/PromptPriorityPill.vue';
+import PromptStatusPill from '@/components/prompts/PromptStatusPill.vue';
 import AppPane from '@/components/shell/AppPane.vue';
 import PaneHeader from '@/components/shell/PaneHeader.vue';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
     Tooltip,
     TooltipContent,
@@ -21,18 +15,9 @@ import { useCopyPrompt } from '@/composables/useCopyPrompt';
 import { usePromptAutosave } from '@/composables/usePromptAutosave';
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 import { PROJECT_DOT_CLASSES } from '@/lib/projectColors';
-import {
-    PROMPT_PRIORITY_LABELS,
-    PROMPT_PRIORITY_QUEUE_PILL_CLASSES,
-} from '@/lib/promptPriority';
-import {
-    PROMPT_STATUS_LABELS,
-    PROMPT_STATUS_QUEUE_DOT_CLASSES,
-    PROMPT_STATUS_QUEUE_PILL_CLASSES,
-} from '@/lib/promptStatus';
 import { formatRelativeTime } from '@/lib/relativeTime';
 import { index } from '@/routes/prompts';
-import type { Prompt, PromptPriority, PromptStatus } from '@/types';
+import type { Prompt } from '@/types';
 
 const { prompt, isNew, narrow, draftProjectId } = defineProps<{
     prompt: Prompt | null;
@@ -51,9 +36,6 @@ const emit = defineEmits<{
 const page = usePage();
 const { copy } = useCopyPrompt();
 const { compact } = useShellBreakpoints();
-
-const statuses: PromptStatus[] = ['todo', 'implementing', 'done'];
-const priorities: PromptPriority[] = ['high', 'normal', 'low'];
 
 const autosave = usePromptAutosave({
     prompt: () => prompt,
@@ -145,18 +127,6 @@ const saveTextClass = computed(() => {
 
     return autosave.savedAt.value ? 'text-[#6FCFA1]' : 'text-ghost-foreground';
 });
-
-const handleSetStatus = (value: AcceptableValue): void => {
-    if (typeof value === 'string') {
-        autosave.setStatus(value as PromptStatus);
-    }
-};
-
-const handleSetPriority = (value: AcceptableValue): void => {
-    if (typeof value === 'string') {
-        autosave.setPriority(value as PromptPriority);
-    }
-};
 
 const toggleDone = (): void => {
     if (!prompt) {
@@ -289,89 +259,15 @@ const removeTag = (name: string): void => {
                 :class="narrow ? 'p-4' : 'px-[26px] py-[22px]'"
             >
                 <div class="flex flex-wrap items-center gap-2.5">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <button
-                                type="button"
-                                class="flex h-[23px] items-center gap-1.5 rounded-md px-2.5 font-mono text-[10.5px] tracking-[0.06em] uppercase"
-                                :class="
-                                    PROMPT_STATUS_QUEUE_PILL_CLASSES[
-                                        autosave.status.value
-                                    ]
-                                "
-                            >
-                                <span>{{
-                                    PROMPT_STATUS_LABELS[autosave.status.value]
-                                }}</span>
-                                <span class="text-[8px] opacity-70">▾</span>
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            align="start"
-                            class="w-44 border-ring bg-popover text-popover-foreground"
-                        >
-                            <DropdownMenuRadioGroup
-                                :model-value="autosave.status.value"
-                                @update:model-value="handleSetStatus"
-                            >
-                                <DropdownMenuRadioItem
-                                    v-for="status in statuses"
-                                    :key="status"
-                                    :value="status"
-                                    class="gap-2 focus:bg-surface-hover focus:text-foreground"
-                                >
-                                    <span
-                                        class="size-1.5 rounded-full"
-                                        :class="
-                                            PROMPT_STATUS_QUEUE_DOT_CLASSES[
-                                                status
-                                            ]
-                                        "
-                                    />
-                                    {{ PROMPT_STATUS_LABELS[status] }}
-                                </DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <PromptStatusPill
+                        :model-value="autosave.status.value"
+                        @update:model-value="autosave.setStatus"
+                    />
 
-                    <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <button
-                                type="button"
-                                class="flex h-[23px] items-center gap-1.5 rounded-md px-2.5 font-mono text-[10.5px] tracking-[0.06em] uppercase"
-                                :class="
-                                    PROMPT_PRIORITY_QUEUE_PILL_CLASSES[
-                                        autosave.priority.value
-                                    ]
-                                "
-                            >
-                                <span>{{
-                                    PROMPT_PRIORITY_LABELS[
-                                        autosave.priority.value
-                                    ]
-                                }}</span>
-                                <span class="text-[8px] opacity-70">▾</span>
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            align="start"
-                            class="w-36 border-ring bg-popover text-popover-foreground"
-                        >
-                            <DropdownMenuRadioGroup
-                                :model-value="autosave.priority.value"
-                                @update:model-value="handleSetPriority"
-                            >
-                                <DropdownMenuRadioItem
-                                    v-for="priority in priorities"
-                                    :key="priority"
-                                    :value="priority"
-                                    class="focus:bg-surface-hover focus:text-foreground"
-                                >
-                                    {{ PROMPT_PRIORITY_LABELS[priority] }}
-                                </DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <PromptPriorityPill
+                        :model-value="autosave.priority.value"
+                        @update:model-value="autosave.setPriority"
+                    />
 
                     <Link
                         v-if="!isNew"
@@ -415,7 +311,7 @@ const removeTag = (name: string): void => {
                     v-model="autosave.body.value"
                     :data-prompt-body="prompt?.id"
                     placeholder="Write the prompt you want to hand an agent…"
-                    class="w-full flex-1 resize-none rounded-[14px] border border-border bg-card p-6 font-mono text-sm leading-[1.75] text-[#C8C8D2] outline-none focus:border-ring"
+                    class="w-full flex-1 resize-none rounded-[14px] border border-border bg-card p-6 font-mono text-sm leading-[1.75] text-editor-foreground outline-none focus:border-ring"
                 />
 
                 <div

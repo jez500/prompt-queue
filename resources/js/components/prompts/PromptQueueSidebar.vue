@@ -62,7 +62,7 @@ const { items } = useProjectScopeNav();
             <button
                 type="button"
                 title="Expand sidebar"
-                class="flex size-9 items-center justify-center rounded-[10px] border border-border bg-[#101016] text-[13px] text-subtle-foreground hover:border-ring hover:text-foreground"
+                class="flex size-9 items-center justify-center rounded-[10px] border border-border bg-card text-[13px] text-subtle-foreground hover:border-ring hover:text-foreground"
                 @click="emit('toggle')"
             >
                 »
@@ -121,7 +121,7 @@ const { items } = useProjectScopeNav();
                     v-if="collapsed"
                     class="flex size-9 flex-none items-center justify-center rounded-[10px] border-2 text-[11px] font-bold tracking-wide"
                     :class="[
-                        item.active ? 'bg-[#16161C]' : 'bg-[#101016]',
+                        item.active ? 'bg-accent' : 'bg-card',
                         item.active && item.color
                             ? PROJECT_BORDER_CLASSES[item.color]
                             : item.active

@@ -37,8 +37,12 @@
     --color-faint-foreground: var(--faint-foreground);
     --color-ghost-foreground: var(--ghost-foreground);
     --color-surface-hover: var(--surface-hover);
+    --color-surface-selected: var(--surface-selected);
     --color-border-strong: var(--border-strong);
     --color-border-hover: var(--border-hover);
+    --color-border-selected: var(--border-selected);
+    --color-editor-foreground: var(--editor-foreground);
+    --color-primary-soft: var(--primary-soft);
 
     --color-card: var(--card);
     --color-card-foreground: var(--card-foreground);
@@ -128,6 +132,9 @@
     --faint-foreground: #5a5a66;
     --ghost-foreground: #4a4a55;
     --surface-hover: #22222c;
+    /* The selected prompt card: one step above `card`, paired with
+       `border-selected` so selection reads without a colour cue. */
+    --surface-selected: #13131a;
     --card: #0d0d12;
     --card-foreground: #f2f2f4;
     --popover: #15151c;
@@ -145,6 +152,12 @@
     --border: #1c1c24;
     --border-strong: #26262f;
     --border-hover: #3a3a46;
+    --border-selected: #35354a;
+    /* The prompt body editor: a touch softer than `foreground`, so a long
+       mono block does not glare. */
+    --editor-foreground: #c8c8d2;
+    /* Brand tint for text on a primary wash, e.g. the active tag filter. */
+    --primary-soft: #c6bbff;
     --input: #1c1c24;
     --ring: #2e2e3a;
     --chart-1: #6e56f8;

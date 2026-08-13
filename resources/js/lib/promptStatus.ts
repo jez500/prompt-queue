@@ -1,5 +1,11 @@
 import type { PromptStatus } from '@/types';
 
+/**
+ * Every status, in the order they are offered in menus and filters.
+ * Declared once so a new case cannot reach some lists and miss others.
+ */
+export const PROMPT_STATUSES: PromptStatus[] = ['todo', 'implementing', 'done'];
+
 export const PROMPT_STATUS_LABELS: Record<PromptStatus, string> = {
     todo: 'Todo',
     implementing: 'Implementing',

@@ -5,7 +5,7 @@ import { PROJECT_DOT_CLASSES } from '@/lib/projectColors';
 import { index } from '@/routes/prompts';
 import type { ProjectColor } from '@/types';
 
-const NEUTRAL_DOT_CLASS = 'bg-[#5A5A66]';
+const NEUTRAL_DOT_CLASS = 'bg-faint-foreground';
 
 export type ProjectScopeItem = {
     id: string;

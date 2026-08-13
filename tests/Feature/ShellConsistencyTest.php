@@ -101,6 +101,39 @@ it('styles the shared shell from theme tokens rather than raw hex', function ():
     }
 });
 
+it('styles the prompt components from theme tokens too', function (): void {
+    /*
+      These drifted first: the same control was tokenised in one file and
+      hand-written in its sibling, and #22222A had already appeared as a
+      near-miss of the #1C1C24 border token.
+
+      Semantic one-offs are still allowed and are listed here explicitly —
+      the success green, the delete-hover red, and the green the done toggle
+      borrows. They carry meaning rather than chrome (see design-tokens.md).
+    */
+    $semantic = ['#6FCFA1', '#FF8B9C', '#5A2733', '#2E7D5B'];
+
+    $components = [
+        'components/prompts/PromptQueueCard.vue',
+        'components/prompts/PromptDetailPane.vue',
+        'components/prompts/PromptListPane.vue',
+        'components/prompts/PromptQueueSidebar.vue',
+        'components/prompts/PromptStatusPill.vue',
+        'components/prompts/PromptPriorityPill.vue',
+        'components/prompts/FilterBar.vue',
+        'composables/useProjectScopeNav.ts',
+    ];
+
+    foreach ($components as $path) {
+        $source = str_replace($semantic, '', jsSource($path));
+
+        expect($source)->not->toMatch(
+            '/#[0-9A-Fa-f]{6}\b/',
+            "Style {$path} from theme tokens rather than raw hex."
+        );
+    }
+});
+
 it('declares both layout thresholds in one composable', function (): void {
     expect(jsSource('composables/useShellBreakpoints.ts'))
         ->toContain('(max-width: 1099px)')
@@ -195,8 +228,8 @@ it('orders the detail metadata as status, priority, project', function (): void 
         (int) strpos(jsSource('components/prompts/PromptDetailPane.vue'), '<template>')
     );
 
-    $status = strpos($template, 'PROMPT_STATUS_QUEUE_PILL_CLASSES');
-    $priority = strpos($template, 'PROMPT_PRIORITY_QUEUE_PILL_CLASSES');
+    $status = strpos($template, '<PromptStatusPill');
+    $priority = strpos($template, '<PromptPriorityPill');
     $project = strpos($template, ':href="projectHref"');
 
     expect($status)->toBeLessThan($priority)

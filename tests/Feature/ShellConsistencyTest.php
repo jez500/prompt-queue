@@ -162,6 +162,21 @@ it('gives every icon-only action both a tooltip and an accessible name', functio
         ->toContain('<TooltipProvider');
 });
 
+it('keeps the hook the clipboard fallback selects', function (): void {
+    /*
+      Copy falls back to selecting the body when the async Clipboard API is
+      unavailable — which it is on any instance served over plain HTTP, a
+      normal way to self-host this. The fallback queries for this attribute;
+      without it on an element, copy fails everywhere it matters while the
+      toast claims the text was selected.
+    */
+    expect(jsSource('composables/useCopyPrompt.ts'))
+        ->toContain('[data-prompt-body="${promptId}"]');
+
+    expect(jsSource('components/prompts/PromptDetailPane.vue'))
+        ->toContain(':data-prompt-body="prompt?.id"');
+});
+
 it('orders the detail metadata as status, priority, project', function (): void {
     /* Search the template only — the imports mention these in another order. */
     $template = substr(

@@ -413,6 +413,7 @@ const removeTag = (name: string): void => {
                 />
                 <textarea
                     v-model="autosave.body.value"
+                    :data-prompt-body="prompt?.id"
                     placeholder="Write the prompt you want to hand an agent…"
                     class="w-full flex-1 resize-none rounded-[14px] border border-border bg-card p-6 font-mono text-sm leading-[1.75] text-[#C8C8D2] outline-none focus:border-ring"
                 />

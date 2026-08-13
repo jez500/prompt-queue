@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 use function Laravel\Prompts\password as promptPassword;
@@ -35,10 +36,11 @@ class CreateUserCommand extends Command
             required: true,
         );
 
-        $email = $this->option('email') ?? text(
+        /* Lowercased to match how Fortify looks the user up at login. */
+        $email = Str::lower($this->option('email') ?? text(
             label: 'Email',
             required: true,
-        );
+        ));
 
         $password = $this->option('password') ?? promptPassword(
             label: 'Password',
@@ -49,7 +51,7 @@ class CreateUserCommand extends Command
             ['name' => $name, 'email' => $email, 'password' => $password],
             [
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
                 'password' => ['required', 'string', Password::default()],
             ]
         );

@@ -12,6 +12,51 @@ test('profile page is displayed', function () {
     $response->assertOk();
 });
 
+test('an email is stored lowercase', function () {
+    $user = User::factory()->create(['email' => 'jez@example.com']);
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), [
+            'name' => $user->name,
+            'email' => 'Jez@Example.COM',
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($user->refresh()->email)->toBe('jez@example.com');
+});
+
+test('a user can still log in after changing the case of their email', function () {
+    $user = User::factory()->create(['email' => 'jez@example.com']);
+
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => $user->name,
+        'email' => 'Jez@Example.COM',
+    ]);
+
+    $this->post(route('logout'));
+
+    $this->post(route('login'), [
+        'email' => 'Jez@Example.COM',
+        'password' => 'password',
+    ])->assertSessionHasNoErrors();
+
+    $this->assertAuthenticated();
+});
+
+test('an email already taken in another case is rejected', function () {
+    User::factory()->create(['email' => 'taken@example.com']);
+    $user = User::factory()->create(['email' => 'jez@example.com']);
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), [
+            'name' => $user->name,
+            'email' => 'Taken@Example.com',
+        ])
+        ->assertSessionHasErrors('email');
+
+    expect($user->refresh()->email)->toBe('jez@example.com');
+});
+
 test('profile information can be updated', function () {
     $user = User::factory()->create();
 

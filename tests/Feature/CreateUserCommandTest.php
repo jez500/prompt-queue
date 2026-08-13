@@ -28,6 +28,28 @@ it('hashes the password rather than storing it raw', function (): void {
         ->and(Hash::check('correct-horse-battery-staple', $user->password))->toBeTrue();
 });
 
+it('lowercases the email rather than rejecting it', function (): void {
+    $this->artisan('pq:create-user', [
+        '--name' => 'Jez',
+        '--email' => 'Jez@Example.COM',
+        '--password' => 'correct-horse-battery-staple',
+    ])->assertSuccessful();
+
+    expect(User::where('email', 'jez@example.com')->exists())->toBeTrue();
+});
+
+it('rejects a duplicate email in another case', function (): void {
+    User::factory()->create(['email' => 'jez@example.com']);
+
+    $this->artisan('pq:create-user', [
+        '--name' => 'Jez',
+        '--email' => 'JEZ@EXAMPLE.COM',
+        '--password' => 'correct-horse-battery-staple',
+    ])->assertFailed();
+
+    expect(User::count())->toBe(1);
+});
+
 it('rejects a duplicate email', function (): void {
     User::factory()->create(['email' => 'jez@example.com']);
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
 import ProjectController from '@/actions/App/Http/Controllers/ProjectController';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -38,9 +38,13 @@ watch(
         });
         form.reset();
         form.clearErrors();
+        confirmingDelete.value = false;
     },
     { immediate: true },
 );
+
+/* Deletion sits beside Save, so it asks first and says what will happen. */
+const confirmingDelete = ref(false);
 
 const save = (): void => {
     if (!project) {
@@ -57,6 +61,8 @@ const destroy = (): void => {
     if (!project) {
         return;
     }
+
+    confirmingDelete.value = false;
 
     form.delete(ProjectController.destroy.url({ project: project.id }), {
         preserveScroll: true,
@@ -110,11 +116,42 @@ const destroy = (): void => {
                 <InputError :message="form.errors.color" />
             </div>
 
-            <div class="mt-auto flex items-center justify-between gap-2 pt-4">
+            <div
+                v-if="confirmingDelete"
+                class="mt-auto flex flex-col gap-3 rounded-lg border border-border bg-muted p-4"
+            >
+                <div class="space-y-1">
+                    <p class="text-sm font-medium">Delete this project?</p>
+                    <p class="text-sm text-muted-foreground">
+                        Its prompts are kept and moved to No project.
+                    </p>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <Button
+                        variant="secondary"
+                        :disabled="form.processing"
+                        @click="confirmingDelete = false"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        :disabled="form.processing"
+                        @click="destroy"
+                    >
+                        Delete project
+                    </Button>
+                </div>
+            </div>
+
+            <div
+                v-else
+                class="mt-auto flex items-center justify-between gap-2 pt-4"
+            >
                 <Button
                     variant="destructive"
                     :disabled="form.processing"
-                    @click="destroy"
+                    @click="confirmingDelete = true"
                 >
                     Delete
                 </Button>

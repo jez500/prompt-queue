@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# Stacked pushes to one branch should not run the whole gate twice.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -30,9 +35,61 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
+          cache: npm
 
       - name: Setup Application
         run: composer setup
 
       - name: Run CI Checks
         run: composer ci:check
+
+  # The image is only built on push to main and on tags, so a Dockerfile or
+  # asset-stage break used to surface after merge, as a failed publish. This
+  # builds it on the pull request instead. It does not push.
+  image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Build the image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          # One architecture is enough to prove it builds; the publish
+          # workflow is what produces the multi-arch image.
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: prompt-queue:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Check the image boots and serves
+        run: |
+          docker run -d --name pq-ci -p 8080:8080 \
+            -e APP_KEY="base64:$(head -c 32 /dev/urandom | base64)" \
+            prompt-queue:ci
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/up > /dev/null; then
+              echo "Image booted and answered /up."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "The image did not answer /up in time." >&2
+          docker logs pq-ci
+          exit 1
+
+      - name: Stop the container
+        if: always()
+        run: docker rm -f pq-ci || true

@@ -118,7 +118,19 @@ class Prompt extends Model
     }
 
     /**
+     * The LIKE escape character.
+     *
+     * Not a backslash: SQLite string literals take no backslash escapes while
+     * MySQL's do, so `ESCAPE '\'` cannot be written portably. This character
+     * is literal in every driver's string literals.
+     */
+    private const LIKE_ESCAPE = '!';
+
+    /**
      * Limit the query to prompts whose title or body contains the term.
+     *
+     * The term is matched literally — a search for "100%" finds prompts
+     * containing "100%", not every prompt starting with "100".
      *
      * @param  Builder<self>  $query
      */
@@ -129,12 +141,31 @@ class Prompt extends Model
             return;
         }
 
-        $escaped = str_replace(['%', '_'], ['\%', '\_'], $term);
+        $pattern = '%'.$this->escapeLikeTerm($term).'%';
 
-        $query->where(function (Builder $query) use ($escaped): void {
-            $query->where('title', 'like', "%{$escaped}%")
-                ->orWhere('body', 'like', "%{$escaped}%");
+        /* The escape character is a constant, not user input, so inlining it
+           is safe — and MySQL will not take a placeholder in this position. */
+        $escape = " escape '".self::LIKE_ESCAPE."'";
+
+        $query->where(function (Builder $query) use ($pattern, $escape): void {
+            $query->whereRaw('title like ?'.$escape, [$pattern])
+                ->orWhereRaw('body like ?'.$escape, [$pattern]);
         });
+    }
+
+    /**
+     * Neutralise the LIKE wildcards in a user-supplied search term.
+     *
+     * The escape character is replaced first, or the escapes added afterwards
+     * would themselves be escaped.
+     */
+    private function escapeLikeTerm(string $term): string
+    {
+        return str_replace(
+            [self::LIKE_ESCAPE, '%', '_'],
+            [self::LIKE_ESCAPE.self::LIKE_ESCAPE, self::LIKE_ESCAPE.'%', self::LIKE_ESCAPE.'_'],
+            $term,
+        );
     }
 
     /**

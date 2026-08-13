@@ -53,6 +53,27 @@ test('search matches both title and body', function () {
     expect(Prompt::query()->search('kafka')->count())->toBe(2);
 });
 
+test('search treats a percent sign as literal text', function () {
+    Prompt::factory()->create(['title' => null, 'body' => 'the discount is 100% off']);
+    Prompt::factory()->create(['title' => null, 'body' => '100 percent complete']);
+
+    expect(Prompt::query()->search('100%')->count())->toBe(1);
+});
+
+test('search treats an underscore as literal text', function () {
+    Prompt::factory()->create(['title' => null, 'body' => 'read user_id from the token']);
+    Prompt::factory()->create(['title' => null, 'body' => 'read userxid from the token']);
+
+    expect(Prompt::query()->search('user_id')->count())->toBe(1);
+});
+
+test('search treats the escape character as literal text', function () {
+    Prompt::factory()->create(['title' => null, 'body' => 'match a literal !% in the body']);
+    Prompt::factory()->create(['title' => null, 'body' => 'unrelated entirely']);
+
+    expect(Prompt::query()->search('!%')->count())->toBe(1);
+});
+
 test('status and priority scopes narrow the results', function () {
     Prompt::factory()->status(PromptStatus::Todo)->create(['priority' => PromptPriority::High]);
     Prompt::factory()->status(PromptStatus::Done)->create(['priority' => PromptPriority::Low]);

@@ -10,8 +10,9 @@
 # the APP_KEY guard below is evaluated for every compose subcommand, so
 # compose cannot be used to produce the key it is demanding.
 #
-# Data lives in the `prompt-queue-data` volume. Back it up by copying
-# /app/database out of the container.
+# Data lives in the `prompt-queue-data` volume. Back it up with
+#   docker compose exec app php artisan pq:backup /app/database/backup.sqlite
+# rather than copying the live file, which can catch a half-written write.
 
 services:
     app:

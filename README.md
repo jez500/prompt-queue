@@ -19,7 +19,8 @@ default.
 - **Find things** with full-text search and status/priority/tag filters.
 - **Reorder** by dragging within a project.
 - **Copy to clipboard** with `⌘C` and paste straight into your agent.
-- **Keyboard-first** — `N` for a new prompt, `⌘K` to search.
+- **Keyboard-first** — `N` for a new prompt, `⌘K` to search, `⌘C` to copy.
+  (`Ctrl` stands in for `⌘` away from a Mac.)
 
 Registration is deliberately closed: this is built to be run for yourself or a
 small trusted group, not opened to the internet.
@@ -61,8 +62,11 @@ docker compose up -d
 docker compose exec app php artisan pq:create-user
 ```
 
-It'll prompt for a name, email and password. In production the password must be
-at least 8 characters with mixed case and a number. Non-interactively:
+It'll prompt for a name, email and password. In production the password rules
+are strict: at least 12 characters, with upper and lower case, a number and a
+symbol. It is also checked against the Have I Been Pwned breach list, which
+needs outbound HTTPS — on an air-gapped host, relax `Password::defaults()` in
+`AppServiceProvider`. Non-interactively:
 
 ```bash
 docker compose exec app php artisan pq:create-user \
@@ -86,8 +90,16 @@ Everything below is optional and set in `.env`.
 Data lives in the `prompt-queue-data` volume, mounted at `/app/database`.
 
 ```bash
-# Back up
-docker compose exec app cat /app/database/database.sqlite > backup.sqlite
+# Back up — VACUUM INTO takes a consistent snapshot while the app is running,
+# which copying the live file does not.
+docker compose exec app php artisan pq:backup /app/database/backup.sqlite
+docker compose cp app:/app/database/backup.sqlite ./backup.sqlite
+docker compose exec app rm /app/database/backup.sqlite
+
+# Restore — stop the app first, then put the file back.
+docker compose down
+docker compose cp ./backup.sqlite app:/app/database/database.sqlite
+docker compose up -d
 
 # Update
 docker compose pull && docker compose up -d    # migrations run on boot

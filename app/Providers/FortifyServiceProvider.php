@@ -62,6 +62,7 @@ class FortifyServiceProvider extends ServiceProvider
             /* A plain prop rather than a flash toast: the auth shell mounts no
                Toaster, so a toast here would be swallowed silently. */
             'ssoError' => $request->session()->get('ssoError'),
+            'showPasswordLogin' => SsoProvider::passwordLoginEnabled(),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [

@@ -227,6 +227,74 @@ test('half-configured credentials do not offer a button that cannot work', funct
         ->and(SsoProvider::enabled())->toBe([]);
 });
 
+test('hiding the login form takes the password form off the page', function () {
+    configureAuthelia();
+    config()->set('sso.hide_login_form', true);
+
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('showPasswordLogin', false)
+            ->has('ssoProviders', 1)
+        );
+});
+
+test('hiding the login form also refuses the password endpoint', function () {
+    configureAuthelia();
+    config()->set('sso.hide_login_form', true);
+
+    $user = User::factory()->create();
+
+    $response = $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('ssoError');
+
+    /* The point of the setting: hiding the form without this would only look
+       like it enforced single sign-on. */
+    $this->assertGuest();
+});
+
+test('hiding the login form does nothing without a provider to fall back on', function () {
+    config()->set('services.authelia.client_id', null);
+    config()->set('services.authelia.client_secret', null);
+    config()->set('sso.hide_login_form', true);
+
+    $user = User::factory()->create();
+
+    $this->get(route('login'))
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('showPasswordLogin', true));
+
+    /* No identity provider means no other way in, so the setting must not be
+       able to lock the instance. */
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('prompts.index'));
+
+    $this->assertAuthenticatedAs($user);
+});
+
+test('password login is untouched while the form is shown', function () {
+    configureAuthelia();
+    config()->set('sso.hide_login_form', false);
+
+    $user = User::factory()->create();
+
+    $this->get(route('login'))
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('showPasswordLogin', true));
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('prompts.index'));
+
+    $this->assertAuthenticatedAs($user);
+});
+
 test('an authenticated user is bounced off the sso routes', function () {
     configureAuthelia();
 

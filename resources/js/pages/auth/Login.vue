@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
 import SsoLoginButtons from '@/components/auth/SsoLoginButtons.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -20,12 +20,21 @@ defineOptions({
     },
 });
 
-const { ssoProviders = [] } = defineProps<{
+const { ssoProviders = [], showPasswordLogin = true } = defineProps<{
     status?: string;
     canResetPassword: boolean;
     ssoProviders?: SsoProvider[];
     ssoError?: string;
+    showPasswordLogin?: boolean;
 }>();
+
+/* The description in defineOptions is static, and it promises a password field
+   that is not there when single sign-on is the only way in. */
+if (!showPasswordLogin) {
+    setLayoutProps({
+        description: 'Sign in with your identity provider to continue',
+    });
+}
 </script>
 
 <template>
@@ -50,7 +59,8 @@ const { ssoProviders = [] } = defineProps<{
     <div v-if="ssoProviders.length" class="flex flex-col gap-6">
         <SsoLoginButtons :providers="ssoProviders" />
 
-        <div class="relative text-center text-sm">
+        <!-- The divider introduces the form, so it goes when the form goes. -->
+        <div v-if="showPasswordLogin" class="relative text-center text-sm">
             <span
                 class="absolute inset-0 top-1/2 border-t border-border"
                 aria-hidden="true"
@@ -62,6 +72,7 @@ const { ssoProviders = [] } = defineProps<{
     </div>
 
     <Form
+        v-if="showPasswordLogin"
         v-bind="store.form()"
         :reset-on-success="['password']"
         v-slot="{ errors, processing }"

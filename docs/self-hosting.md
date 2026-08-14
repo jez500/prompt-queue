@@ -53,7 +53,7 @@ Everything below is optional and set in `.env`.
 | `APP_NAME` | `Prompt Queue` | Shown in the browser title. |
 | `MAIL_MAILER` | `log` | Only used for password resets. Left as `log`, reset links go to the container log instead of being emailed. |
 
-Single sign-on adds four more, all covered in
+Single sign-on adds `AUTHELIA_*` and `HIDE_LOGIN_FORM`, all covered in
 [authentication.md](authentication.md).
 
 ## Backup and restore

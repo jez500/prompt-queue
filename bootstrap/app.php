@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordLoginIsEnabled;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             HandleAppearance::class,
+            /* Fortify registers the login route itself, so this guards it from
+               inside the group rather than at the route definition. */
+            EnsurePasswordLoginIsEnabled::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);

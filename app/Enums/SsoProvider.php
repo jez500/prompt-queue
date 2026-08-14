@@ -73,4 +73,20 @@ enum SsoProvider: string
 
         return $enabled;
     }
+
+    /**
+     * Whether the email and password form should still be offered.
+     *
+     * Lives here because the interlock is the whole point: `HIDE_LOGIN_FORM`
+     * only bites when a provider is actually available, so setting it on an
+     * instance with no working identity provider cannot lock anyone out.
+     */
+    public static function passwordLoginEnabled(): bool
+    {
+        if (self::enabled() === []) {
+            return true;
+        }
+
+        return ! config('sso.hide_login_form');
+    }
 }

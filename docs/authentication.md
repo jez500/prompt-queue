@@ -33,8 +33,9 @@ Optional. Leave it unconfigured and nothing changes: the login page shows the
 email and password form exactly as it does today.
 
 When it *is* configured, a **Continue with Authelia** button appears above the
-password form. The password form stays — if Authelia is unreachable you can
-still get into your own instance.
+password form. The password form stays by default — if Authelia is unreachable
+you can still get into your own instance. To drop it, see
+[Single sign-on only](#single-sign-on-only) below.
 
 ### 1. Create the client in Authelia
 
@@ -94,6 +95,41 @@ php artisan pq:create-user --name="Jez" --email="you@example.com"
 Use the same email address the user has in Authelia. On their first SSO login
 that account is found by email and bound to their Authelia identity; every
 login after that matches on the OIDC subject instead.
+
+## Single sign-on only
+
+To make Authelia the only way in:
+
+```dotenv
+HIDE_LOGIN_FORM=true
+```
+
+The password form disappears from the login screen **and** `POST /login` is
+refused, so this genuinely enforces single sign-on rather than just tidying the
+page away.
+
+Two things to know before you set it.
+
+**It does nothing unless a provider is configured.** If `AUTHELIA_CLIENT_ID` or
+`AUTHELIA_CLIENT_SECRET` is missing, the form comes back and password login
+works as normal. That interlock is deliberate: the setting cannot lock you out
+of an instance that has no other way in.
+
+**Setting it back to `false` is the only escape hatch.** There is no in-app
+override, no admin bypass, no artisan command. If Authelia goes down while this
+is on, getting back in means editing `.env` and restarting:
+
+```bash
+docker compose exec app sed -i 's/^HIDE_LOGIN_FORM=.*/HIDE_LOGIN_FORM=false/' .env
+docker compose restart app
+```
+
+If that would be painful on your host — no shell, no quick redeploy — leave the
+password form in place. It costs nothing while nobody uses it.
+
+Password *resets* are unaffected. The "Forgot your password?" link lives inside
+the hidden form so it isn't reachable from the UI, but the routes still work if
+you know the URL, and a reset only matters once you turn the form back on.
 
 ## How linking works
 

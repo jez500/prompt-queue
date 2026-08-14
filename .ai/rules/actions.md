@@ -35,3 +35,17 @@ with no way for an admin to fix it.
 If you ever add self-provisioning, it changes a self-hosted instance from
 invite-only to "anyone Authelia will authenticate" — say so loudly in the
 README and `docs/authentication.md`, same as enabling `Features::registration()`.
+
+## HIDE_LOGIN_FORM has an interlock, and it is not optional
+
+`SsoProvider::passwordLoginEnabled()` returns true whenever `enabled() === []`,
+**before** it looks at `config('sso.hide_login_form')`. Do not "simplify" that
+early return away: without it, setting the flag on an instance whose provider
+credentials are missing or wrong removes the only remaining way in, and the fix
+requires shell access to the container.
+
+The setting is enforced in two places that must agree — the `showPasswordLogin`
+prop hides the form, and `EnsurePasswordLoginIsEnabled` refuses
+`POST /login`. Changing one without the other either locks people out of a form
+they can still see, or leaves an endpoint open that the UI says is closed.
+`SsoTest` covers all four combinations of flag and provider.

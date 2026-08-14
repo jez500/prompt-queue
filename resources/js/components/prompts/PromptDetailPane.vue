@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 import { Check, RotateCcw, Trash2 } from '@lucide/vue';
 import type { Ref } from 'vue';
 import { computed, inject, nextTick, ref, watch } from 'vue';
 import PromptPriorityPill from '@/components/prompts/PromptPriorityPill.vue';
+import PromptProjectPill from '@/components/prompts/PromptProjectPill.vue';
 import PromptStatusPill from '@/components/prompts/PromptStatusPill.vue';
 import AppPane from '@/components/shell/AppPane.vue';
 import PaneHeader from '@/components/shell/PaneHeader.vue';
@@ -18,7 +19,6 @@ import { usePromptAutosave } from '@/composables/usePromptAutosave';
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 import { PROJECT_DOT_CLASSES } from '@/lib/projectColors';
 import { formatRelativeTime } from '@/lib/relativeTime';
-import { index } from '@/routes/prompts';
 import type { Prompt } from '@/types';
 
 const { prompt, isNew, narrow, draftProjectId } = defineProps<{
@@ -30,8 +30,8 @@ const { prompt, isNew, narrow, draftProjectId } = defineProps<{
 
 const emit = defineEmits<{
     back: [];
-    new: [];
     created: [id: number];
+    moved: [projectId: number | null, promptId: number];
     deleted: [];
 }>();
 
@@ -71,12 +71,6 @@ const project = computed(() => {
     return page.props.projects.find((candidate) => candidate.id === id) ?? null;
 });
 
-const projectHref = computed(() =>
-    project.value
-        ? index({ query: { project: String(project.value.id) } })
-        : index({ query: { project: 'inbox' } }),
-);
-
 const saveLabel = computed(() => {
     if (autosave.saving.value) {
         return 'Saving…';
@@ -112,10 +106,12 @@ const saveDotClass = computed(() => {
     }
 
     if (autosave.failed.value) {
-        return 'bg-[#FF8B9C]';
+        return 'bg-[#C43350] dark:bg-[#FF8B9C]';
     }
 
-    return autosave.savedAt.value ? 'bg-[#6FCFA1]' : 'bg-ghost-foreground';
+    return autosave.savedAt.value
+        ? 'bg-[#1F7A55] dark:bg-[#6FCFA1]'
+        : 'bg-ghost-foreground';
 });
 
 const saveTextClass = computed(() => {
@@ -124,10 +120,12 @@ const saveTextClass = computed(() => {
     }
 
     if (autosave.failed.value) {
-        return 'text-[#FF8B9C]';
+        return 'text-[#C43350] dark:text-[#FF8B9C]';
     }
 
-    return autosave.savedAt.value ? 'text-[#6FCFA1]' : 'text-ghost-foreground';
+    return autosave.savedAt.value
+        ? 'text-[#1F7A55] dark:text-[#6FCFA1]'
+        : 'text-ghost-foreground';
 });
 
 const toggleDone = (): void => {
@@ -176,39 +174,38 @@ const addTag = (): void => {
     const name = tagDraft.value.trim();
     tagDraft.value = '';
 
-    if (!prompt || name === '' || prompt.tags.includes(name)) {
+    if (name === '' || autosave.tags.value.includes(name)) {
         return;
     }
 
-    autosave.updateTags([...prompt.tags, name]);
+    autosave.updateTags([...autosave.tags.value, name]);
+};
+
+/**
+ * Move the prompt, and tell the page which prompt went where. The id is
+ * captured here because by the time the move lands the page's `selected` has
+ * already moved on to whatever is left in the bucket being viewed.
+ */
+const handleProjectChange = (projectId: number | null): void => {
+    const movedId = prompt?.id;
+
+    if (movedId === undefined) {
+        return;
+    }
+
+    autosave.setProject(projectId, () => emit('moved', projectId, movedId));
 };
 
 const removeTag = (name: string): void => {
-    if (!prompt) {
-        return;
-    }
-
-    autosave.updateTags(prompt.tags.filter((tag) => tag !== name));
+    autosave.updateTags(autosave.tags.value.filter((tag) => tag !== name));
 };
 </script>
 
 <template>
     <AppPane variant="detail" :narrow="narrow">
         <template v-if="isNew || prompt">
-            <PaneHeader eyebrow="Prompt" :narrow="narrow" @back="emit('back')">
-                <button
-                    type="button"
-                    class="flex h-[26px] items-center gap-1.5 rounded-full border border-border-strong bg-muted px-2.5 text-xs font-semibold text-secondary-foreground hover:border-border-hover hover:text-foreground"
-                    @click="emit('new')"
-                >
-                    <span class="text-[13px]">+</span>
-                    <span>New</span>
-                    <span
-                        class="font-mono text-[10.5px] text-faint-foreground"
-                        >{{ shortcutHint('new') }}</span
-                    >
-                </button>
-                <div class="ml-1 flex items-center gap-1.5">
+            <PaneHeader :narrow="narrow" @back="emit('back')">
+                <div class="flex items-center gap-1.5">
                     <span class="size-1.5 rounded-full" :class="saveDotClass" />
                     <span
                         class="font-mono text-[10.5px] tracking-[0.04em]"
@@ -224,7 +221,7 @@ const removeTag = (name: string): void => {
                             <button
                                 type="button"
                                 aria-label="Delete prompt"
-                                class="flex size-8 flex-none items-center justify-center rounded-[9px] border border-border-strong text-muted-foreground hover:border-[#5A2733] hover:text-[#FF8B9C]"
+                                class="flex size-8 flex-none items-center justify-center rounded-[9px] border border-border-strong text-muted-foreground hover:border-[#E8B4BF] hover:text-[#C43350] dark:hover:border-[#5A2733] dark:hover:text-[#FF8B9C]"
                                 @click="handleDelete"
                             >
                                 <Trash2 class="size-4" />
@@ -242,7 +239,7 @@ const removeTag = (name: string): void => {
                                 :class="
                                     prompt.status === 'done'
                                         ? 'hover:border-border-hover hover:text-foreground'
-                                        : 'hover:border-[#2E7D5B] hover:text-[#6FCFA1]'
+                                        : 'hover:border-[#A7D8C0] hover:text-[#1F7A55] dark:hover:border-[#2E7D5B] dark:hover:text-[#6FCFA1]'
                                 "
                                 @click="toggleDone"
                             >
@@ -286,21 +283,13 @@ const removeTag = (name: string): void => {
                         @update:model-value="autosave.setPriority"
                     />
 
-                    <Link
-                        v-if="!isNew"
-                        :href="projectHref"
-                        class="flex items-center gap-1.5 text-[12.5px] text-muted-foreground hover:text-foreground"
-                    >
-                        <span
-                            class="size-1.5 rounded-full"
-                            :class="
-                                project
-                                    ? PROJECT_DOT_CLASSES[project.color]
-                                    : 'bg-faint-foreground'
-                            "
-                        />
-                        {{ project?.name ?? 'No project' }}
-                    </Link>
+                    <PromptProjectPill
+                        v-if="!isNew && prompt"
+                        :model-value="prompt.projectId"
+                        @update:model-value="handleProjectChange"
+                    />
+                    <!-- A draft is filed by the scope it was captured in;
+                         there is no prompt to move yet. -->
                     <div
                         v-else
                         class="flex items-center gap-1.5 text-[12.5px] text-muted-foreground"
@@ -331,12 +320,9 @@ const removeTag = (name: string): void => {
                     class="w-full flex-1 resize-none rounded-[14px] border border-border bg-card p-6 font-mono text-sm leading-[1.75] text-editor-foreground outline-none focus:border-ring"
                 />
 
-                <div
-                    v-if="!isNew && prompt"
-                    class="flex flex-wrap items-center gap-2"
-                >
+                <div class="flex flex-wrap items-center gap-2">
                     <span
-                        v-for="tag in prompt.tags"
+                        v-for="tag in autosave.tags.value"
                         :key="tag"
                         class="flex h-[26px] items-center gap-1.5 rounded-full bg-muted px-2.5 font-mono text-[11px] text-muted-foreground"
                     >
@@ -357,7 +343,12 @@ const removeTag = (name: string): void => {
                         @keydown.enter.prevent="addTag"
                     />
                     <div class="flex-1" />
-                    <div class="font-mono text-[11px] text-ghost-foreground">
+                    <!-- A draft has never been saved, so it has no time to
+                         show and nothing to have copied. -->
+                    <div
+                        v-if="prompt"
+                        class="font-mono text-[11px] text-ghost-foreground"
+                    >
                         {{ formatRelativeTime(prompt.updatedAt)
                         }}{{ copiedId === prompt.id ? ' · copied' : '' }}
                     </div>

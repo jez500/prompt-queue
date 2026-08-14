@@ -67,8 +67,11 @@ const select = (value: AcceptableValue): void => {
                     v-for="status in PROMPT_STATUSES"
                     :key="status"
                     :value="status"
-                    class="gap-2 focus:bg-surface-hover focus:text-foreground"
+                    class="gap-2 pl-2 text-muted-foreground focus:bg-surface-hover focus:text-foreground data-[state=checked]:text-foreground"
                 >
+                    <!-- The status colour is the marker; the menu's own
+                         checked dot would sit beside it as a second one. -->
+                    <template #indicator-icon><span /></template>
                     <span
                         class="size-1.5 rounded-full"
                         :class="PROMPT_STATUS_QUEUE_DOT_CLASSES[status]"

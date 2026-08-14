@@ -11,16 +11,16 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useInitials } from '@/composables/useInitials';
-import { shortcutHint } from '@/composables/useKeyboardShortcuts';
 import { useProjectScopeNav } from '@/composables/useProjectScopeNav';
 import {
     PROJECT_BORDER_CLASSES,
     PROJECT_TEXT_CLASSES,
 } from '@/lib/projectColors';
+import { index } from '@/routes/prompts';
 
 const { collapsed } = defineProps<{ collapsed: boolean }>();
 
-const emit = defineEmits<{ toggle: []; 'new-prompt': [] }>();
+const emit = defineEmits<{ toggle: [] }>();
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -37,17 +37,24 @@ const { items } = useProjectScopeNav();
             class="flex items-center gap-2.5 px-1"
             :class="collapsed ? 'justify-center' : 'justify-between'"
         >
-            <div
-                class="flex size-[26px] flex-none items-center justify-center rounded-lg bg-primary"
+            <Link
+                :href="index()"
+                title="Prompt Queue"
+                class="flex min-w-0 flex-1 items-center gap-2.5"
+                :class="collapsed ? 'flex-none' : ''"
             >
-                <AppLogoIcon class="size-3 text-background" />
-            </div>
-            <div
-                v-if="!collapsed"
-                class="flex-1 truncate text-sm font-bold tracking-tight text-foreground"
-            >
-                Prompt Queue
-            </div>
+                <span
+                    class="flex size-[26px] flex-none items-center justify-center rounded-lg bg-primary"
+                >
+                    <AppLogoIcon class="size-3 text-background" />
+                </span>
+                <span
+                    v-if="!collapsed"
+                    class="min-w-0 flex-1 truncate text-sm font-bold tracking-tight text-foreground"
+                >
+                    Prompt Queue
+                </span>
+            </Link>
             <button
                 v-if="!collapsed"
                 type="button"
@@ -70,21 +77,9 @@ const { items } = useProjectScopeNav();
             </button>
         </div>
 
-        <button
-            type="button"
-            title="New prompt"
-            class="flex h-[34px] items-center gap-2 rounded-[9px] bg-primary font-sans text-[13px] font-semibold text-white"
-            :class="collapsed ? 'justify-center' : 'justify-start px-2.5'"
-            @click="emit('new-prompt')"
-        >
-            <span class="text-[15px] leading-none">+</span>
-            <span v-if="!collapsed" class="flex-1 text-left">New prompt</span>
-            <span v-if="!collapsed" class="font-mono text-[11px] opacity-75">
-                {{ shortcutHint('new') }}
-            </span>
-        </button>
-
-        <div class="flex flex-col gap-1.5">
+        <!-- Capture lives on the list pane header, next to the list it adds
+             to. The N shortcut still works from anywhere. -->
+        <div class="mt-2 flex flex-col gap-1.5">
             <div
                 v-if="!collapsed"
                 class="flex items-center justify-between px-2.5"

@@ -9,6 +9,37 @@ import type { Prompt, PromptPriority, PromptStatus } from '@/types';
 
 type Snapshot = { title: string; body: string };
 
+/**
+ * The maximum length of a title derived from the body — the same limit the
+ * server applies when falling back to the first line for display.
+ */
+const DERIVED_TITLE_LENGTH = 80;
+
+/**
+ * The title to fill in for a prompt that has none: the first line of the
+ * body, stripped of leading whitespace and Markdown heading marks.
+ *
+ * A body that is still a single line derives nothing. The list already falls
+ * back to showing that line, and committing it as a title would freeze the
+ * opening words of a prompt that is mid-sentence.
+ */
+export function deriveTitleFromBody(body: string): string | null {
+    if (!body.trimEnd().includes('\n')) {
+        return null;
+    }
+
+    const firstLine = body
+        .slice(0, body.indexOf('\n'))
+        .replace(/^[\s#]+/, '')
+        .trim();
+
+    if (firstLine === '') {
+        return null;
+    }
+
+    return firstLine.slice(0, DERIVED_TITLE_LENGTH);
+}
+
 type Options = {
     prompt: () => Prompt | null;
     isNew: () => boolean;
@@ -24,6 +55,9 @@ type Options = {
  * priority and tags have their own endpoints, and echoing them back would
  * revert whatever was changed there while typing.
  *
+ * A prompt saved with no title of its own gets one derived from the first
+ * line of its body — see `deriveTitleFromBody`.
+ *
  * A save that fails says so: the indicator reads "Not saved", a toast
  * explains, and the edit stays pending so the next keystroke retries it
  * rather than being overwritten by the server's older copy.
@@ -36,6 +70,9 @@ export function usePromptAutosave(options: Options) {
     const body = ref('');
     const status = ref<PromptStatus>('todo');
     const priority = ref<PromptPriority>('normal');
+    /* Held here rather than read off the prompt, so a draft can carry tags
+       before there is anything to attach them to. */
+    const tags = ref<string[]>([]);
     const saving = ref(false);
     const savedAt = ref<number | null>(null);
     const failed = ref(false);
@@ -64,13 +101,25 @@ export function usePromptAutosave(options: Options) {
                 justCreatedId.value = null;
                 editedId.value = incomingId;
 
+                /*
+                  Typing carried on while the create was in flight, and there
+                  was no prompt id to patch against at the time. Now there is.
+                */
+                if (
+                    title.value !== lastSaved.value.title ||
+                    body.value !== lastSaved.value.body
+                ) {
+                    debouncedSave();
+                }
+
                 return;
             }
 
-            // Status and priority are chosen from dropdowns rather than typed,
-            // so following the server costs nobody their caret position.
+            // Status, priority and tags are clicked rather than typed, so
+            // following the server costs nobody their caret position.
             status.value = value?.status ?? 'todo';
             priority.value = value?.priority ?? 'normal';
+            tags.value = value?.tags ?? [];
 
             if (!switchedPrompt) {
                 /*
@@ -101,12 +150,32 @@ export function usePromptAutosave(options: Options) {
         { immediate: true },
     );
 
+    /**
+     * Fill an empty title from the body as the save goes out, so the field on
+     * screen shows what was stored. Only ever writes into an empty title.
+     */
+    const applyDerivedTitle = (): void => {
+        if (title.value.trim() !== '') {
+            return;
+        }
+
+        const derived = deriveTitleFromBody(body.value);
+
+        if (derived === null) {
+            return;
+        }
+
+        title.value = derived;
+    };
+
     const patch = (): void => {
         const target = current.value;
 
         if (!target) {
             return;
         }
+
+        applyDerivedTitle();
 
         if (
             title.value === lastSaved.value.title &&
@@ -163,6 +232,8 @@ export function usePromptAutosave(options: Options) {
             return;
         }
 
+        applyDerivedTitle();
+
         const pendingTitle = title.value.trim();
         const sentSnapshot: Snapshot = { title: title.value, body: body.value };
         const knownIds = new Set(knownPrompts().map((entry) => entry.id));
@@ -181,11 +252,14 @@ export function usePromptAutosave(options: Options) {
                 status: status.value,
                 priority: priority.value,
                 project: projectId(),
+                /* Tags typed on the draft. The update endpoint would take
+                   them, but only after this request has given them an id. */
+                tags: tags.value,
             },
             {
                 preserveScroll: true,
                 preserveState: true,
-                only: ['prompts', 'projects', 'canReorder'],
+                only: ['prompts', 'projects', 'canReorder', 'tags'],
                 onSuccess: () => {
                     const created = knownPrompts().find(
                         (entry) => !knownIds.has(entry.id),
@@ -285,10 +359,14 @@ export function usePromptAutosave(options: Options) {
         );
     };
 
-    const updateTags = (tags: string[]): void => {
+    const updateTags = (next: string[]): void => {
+        tags.value = next;
+
         const target = current.value;
 
         if (!target) {
+            /* A draft: there is no prompt to attach them to yet, so they ride
+               along with the create instead. */
             return;
         }
 
@@ -299,12 +377,46 @@ export function usePromptAutosave(options: Options) {
         */
         router.patch(
             PromptController.update.url({ prompt: target.id }),
-            { tags },
+            { tags: next },
             {
                 preserveScroll: true,
                 preserveState: true,
-                only: ['prompts'],
+                /* `selected` carries the tag row being edited and `tags` the
+                   filter bar's list, so both have to come back or the change
+                   saves without ever showing up. */
+                only: ['prompts', 'selected', 'tags'],
                 onError: () => toast.error('Could not update tags.'),
+            },
+        );
+    };
+
+    /**
+     * File the prompt under a project, or none. The server puts it at the top
+     * of the bucket it lands in, so the list and the reorder flag come back
+     * with it.
+     *
+     * `onMoved` runs once the move has landed, for the caller that wants to
+     * follow the prompt into its new project.
+     */
+    const setProject = (
+        projectId: number | null,
+        onMoved?: () => void,
+    ): void => {
+        const target = current.value;
+
+        if (!target || projectId === target.projectId) {
+            return;
+        }
+
+        router.patch(
+            PromptController.update.url({ prompt: target.id }),
+            { project: projectId },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['prompts', 'selected', 'projects', 'canReorder'],
+                onSuccess: () => onMoved?.(),
+                onError: () => toast.error('Could not move the prompt.'),
             },
         );
     };
@@ -327,11 +439,13 @@ export function usePromptAutosave(options: Options) {
         body,
         status,
         priority,
+        tags,
         saving,
         savedAt,
         failed,
         setStatus,
         setPriority,
+        setProject,
         updateTags,
         destroy,
     };

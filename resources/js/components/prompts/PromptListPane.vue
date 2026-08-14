@@ -7,6 +7,7 @@ import FilterBar from '@/components/prompts/FilterBar.vue';
 import PromptQueueCard from '@/components/prompts/PromptQueueCard.vue';
 import AppPane from '@/components/shell/AppPane.vue';
 import NarrowTopBar from '@/components/shell/NarrowTopBar.vue';
+import { shortcutHint } from '@/composables/useKeyboardShortcuts';
 import { reorder } from '@/routes/prompts';
 import type {
     Project,
@@ -91,6 +92,25 @@ const persist = (): void => {
                 >
                     <Pencil class="size-3.5" />
                 </button>
+
+                <div class="flex-1" />
+
+                <!-- Capture sits with the list it adds to: a draft is filed
+                     into whichever scope is open. Narrow already has the top
+                     bar's +, so it does not carry this as well. -->
+                <button
+                    v-if="!narrow"
+                    type="button"
+                    title="New prompt"
+                    class="flex h-[26px] flex-none items-center gap-1.5 rounded-full border border-border-strong bg-muted px-2.5 text-xs font-semibold text-secondary-foreground hover:border-border-hover hover:text-foreground"
+                    @click="emit('newPrompt')"
+                >
+                    <span class="text-[13px]">+</span>
+                    <span>New</span>
+                    <span class="font-mono text-[10.5px] text-faint-foreground">
+                        {{ shortcutHint('new') }}
+                    </span>
+                </button>
             </div>
 
             <FilterBar
@@ -118,6 +138,16 @@ const persist = (): void => {
                 >
                     Capture the next thing you want an agent to pick up.
                 </div>
+                <!-- Drafts are filed into whatever scope is open, so this
+                     captures straight into the project being viewed. -->
+                <button
+                    type="button"
+                    class="mt-1 flex h-[30px] items-center gap-1.5 rounded-[9px] bg-primary px-3 text-[13px] font-semibold text-primary-foreground"
+                    @click="emit('newPrompt')"
+                >
+                    <span class="text-[15px] leading-none">+</span>
+                    <span>Add a prompt</span>
+                </button>
             </div>
 
             <draggable

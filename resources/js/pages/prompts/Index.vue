@@ -32,18 +32,49 @@ const drafting = ref(false);
 const openDetail = ref(false);
 const editingProject = ref<Project | null>(null);
 
-const { filters, setFilter, search, selectPrompt } = usePromptFilters(
-    () => props.filters,
-);
+const { filters, setFilter, search, selectPrompt, followPrompt } =
+    usePromptFilters(() => props.filters);
+
+/*
+  A prompt this page has just created. The server only sends a body for the
+  prompt named in ?prompt=, so there is a round trip between the create
+  landing and the new prompt arriving as `selected` — and the editor must not
+  be handed the previous selection in the meantime.
+*/
+const pendingCreatedId = ref<number | null>(null);
 
 const selectedId = computed<number | 'new' | null>(() =>
     drafting.value ? 'new' : (props.selected?.id ?? null),
 );
 
+/*
+  What the editor edits. A draft has no server-side prompt, and neither does
+  a create still in flight; either way the editor keeps what was typed rather
+  than adopting whatever was selected before.
+*/
+const editedPrompt = computed<Prompt | null>(() => {
+    if (drafting.value) {
+        return null;
+    }
+
+    if (
+        pendingCreatedId.value !== null &&
+        props.selected?.id !== pendingCreatedId.value
+    ) {
+        return null;
+    }
+
+    return props.selected;
+});
+
 /* Leaving the draft once it has been saved, or the list has moved on. */
 watch(
     () => props.selected?.id,
-    () => {
+    (id) => {
+        if (id !== undefined && id === pendingCreatedId.value) {
+            pendingCreatedId.value = null;
+        }
+
         if (!drafting.value) {
             openDetail.value = openDetail.value && props.selected !== null;
         }
@@ -114,17 +145,41 @@ const handleSelect = (prompt: Prompt): void => {
     drafting.value = false;
     openDetail.value = true;
 
+    /* Picking anything other than the prompt just created abandons the wait
+       for it, or the editor would sit empty until an id that is no longer
+       coming arrives. */
+    if (prompt.id !== pendingCreatedId.value) {
+        pendingCreatedId.value = null;
+    }
+
     if (prompt.id !== props.selected?.id) {
         selectPrompt(prompt.id);
     }
 };
 
 const handleCreated = (id: number): void => {
+    /* Cleared before the draft, so the editor never sees the old selection
+       in the gap between the two. */
+    pendingCreatedId.value = id;
     drafting.value = false;
     selectPrompt(id);
 };
 
+/*
+  A prompt moved out of the project being viewed would otherwise vanish from
+  the list and take the editor with it, so the list follows it across. From
+  "All prompts" there is nothing to follow: it is still listed, still open.
+*/
+const handleMoved = (projectId: number | null, promptId: number): void => {
+    if (filters.value.project === null) {
+        return;
+    }
+
+    followPrompt(projectId, promptId);
+};
+
 const handleDeleted = (): void => {
+    pendingCreatedId.value = null;
     drafting.value = false;
     openDetail.value = false;
     selectPrompt(null);
@@ -169,13 +224,13 @@ const toggle = <T extends string>(list: T[], value: T): T[] =>
 
     <PromptDetailPane
         v-if="!narrow || openDetail"
-        :prompt="props.selected"
+        :prompt="editedPrompt"
         :is-new="selectedId === 'new'"
         :narrow="narrow"
         :draft-project-id="captureProjectId"
         @back="openDetail = false"
-        @new="createDraft"
         @created="handleCreated"
+        @moved="handleMoved"
         @deleted="handleDeleted"
     />
 

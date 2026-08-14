@@ -68,7 +68,6 @@ onMounted(() => {
                 v-if="!narrow"
                 :collapsed="collapsed"
                 @toggle="toggleSidebar"
-                @new-prompt="requestNewPrompt"
             />
             <slot />
 

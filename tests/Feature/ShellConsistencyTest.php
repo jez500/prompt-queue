@@ -109,9 +109,14 @@ it('styles the prompt components from theme tokens too', function (): void {
 
       Semantic one-offs are still allowed and are listed here explicitly —
       the success green, the delete-hover red, and the green the done toggle
-      borrows. They carry meaning rather than chrome (see design-tokens.md).
+      borrows. They carry meaning rather than chrome (see design-tokens.md),
+      and each comes in a light/dark pair: a tint tuned for near-black is
+      unreadable on paper, so both halves are written out at the call site.
     */
-    $semantic = ['#6FCFA1', '#FF8B9C', '#5A2733', '#2E7D5B'];
+    $semantic = [
+        '#6FCFA1', '#FF8B9C', '#5A2733', '#2E7D5B',
+        '#1F7A55', '#C43350', '#E8B4BF', '#A7D8C0',
+    ];
 
     $components = [
         'components/prompts/PromptQueueCard.vue',
@@ -210,7 +215,8 @@ it('renders keyboard hints from the bindings that implement them', function (): 
     $chips = [
         'components/prompts/FilterBar.vue' => 'search',
         'components/prompts/PromptDetailPane.vue' => 'copy',
-        'components/prompts/PromptQueueSidebar.vue' => 'new',
+        /* Capture moved off the sidebar and onto the list pane header. */
+        'components/prompts/PromptListPane.vue' => 'new',
     ];
 
     foreach ($chips as $path => $id) {
@@ -260,7 +266,25 @@ it('orders the detail metadata as status, priority, project', function (): void 
 
     $status = strpos($template, '<PromptStatusPill');
     $priority = strpos($template, '<PromptPriorityPill');
-    $project = strpos($template, ':href="projectHref"');
+    /* The project was a link to its filtered list; it is now a menu that
+       moves the prompt, but it still sits third in the row. */
+    $project = strpos($template, '<PromptProjectPill');
+
+    expect($status)->toBeLessThan($priority)
+        ->and($priority)->toBeLessThan($project);
+});
+
+it('orders the queue card the same way as the detail pane', function (): void {
+    /* The card used to push priority to the far right, so the same three
+       facts read in one order on the list and another in the editor. */
+    $template = substr(
+        jsSource('components/prompts/PromptQueueCard.vue'),
+        (int) strpos(jsSource('components/prompts/PromptQueueCard.vue'), '<template>')
+    );
+
+    $status = strpos($template, '<PromptStatusPill');
+    $priority = strpos($template, '<PromptPriorityPill');
+    $project = strpos($template, '<Link');
 
     expect($status)->toBeLessThan($priority)
         ->and($priority)->toBeLessThan($project);

@@ -82,9 +82,24 @@ export function usePromptFilters(current: () => PromptFilters) {
         visit({ prompt: id === null ? null : String(id) }, ['selected']);
     };
 
+    /**
+     * Re-scope the list to the project a prompt was just moved into, keeping
+     * that prompt open.
+     *
+     * Unlike `setFilter` this holds on to `prompt`: the move is the reason the
+     * list changed, and dropping the selection would close the editor the move
+     * was made from.
+     */
+    const followPrompt = (projectId: number | null, promptId: number): void => {
+        visit({
+            project: projectId === null ? 'inbox' : String(projectId),
+            prompt: String(promptId),
+        });
+    };
+
     const search = useDebounceFn((term: string): void => {
         visit({ q: term, prompt: null });
     }, 250);
 
-    return { filters, setFilter, search, selectPrompt };
+    return { filters, setFilter, search, selectPrompt, followPrompt };
 }

@@ -36,7 +36,11 @@ const projectHref = computed(() =>
     }),
 );
 
-const preview = computed(() => prompt.excerpt || 'Empty — open to write it');
+/*
+  The server leaves this empty when the title already says everything the
+  body's opening line does, so the card would otherwise print it twice.
+*/
+const preview = computed(() => prompt.excerpt);
 
 const setStatus = (status: PromptStatus): void => {
     router.patch(
@@ -79,6 +83,12 @@ const setPriority = (priority: PromptPriority): void => {
                 @update:model-value="setStatus"
             />
 
+            <PromptPriorityPill
+                :model-value="prompt.priority"
+                size="sm"
+                @update:model-value="setPriority"
+            />
+
             <Link
                 :href="projectHref"
                 class="flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-foreground"
@@ -96,13 +106,6 @@ const setPriority = (priority: PromptPriority): void => {
             </Link>
 
             <div class="flex-1" />
-
-            <PromptPriorityPill
-                :model-value="prompt.priority"
-                size="sm"
-                align="end"
-                @update:model-value="setPriority"
-            />
         </div>
 
         <div
@@ -116,6 +119,7 @@ const setPriority = (priority: PromptPriority): void => {
             {{ prompt.title || 'Untitled prompt' }}
         </div>
         <div
+            v-if="preview"
             class="max-h-[38px] overflow-hidden font-mono text-xs leading-relaxed text-subtle-foreground"
         >
             {{ preview }}

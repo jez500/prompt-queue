@@ -4,7 +4,10 @@ import PromptStatusController from '@/actions/App/Http/Controllers/PromptStatusC
 import type { Prompt } from '@/types';
 
 /**
- * Copies a prompt body, then advances a fresh prompt to Implementing.
+ * Copies the prompt body currently in the editor, then advances a fresh
+ * prompt to Implementing. The body is passed in rather than read from the
+ * prompt, because only the selected prompt carries one and the editor's copy
+ * is the text the user can actually see.
  *
  * The async Clipboard API needs a secure context, which a self-hosted
  * instance served over plain HTTP on a LAN is not. That is a normal way to
@@ -13,12 +16,12 @@ import type { Prompt } from '@/types';
  * to press the shortcut themselves if even that is refused.
  */
 export function useCopyPrompt() {
-    const copy = async (prompt: Prompt): Promise<void> => {
+    const copy = async (prompt: Prompt, body: string): Promise<void> => {
         const clipboard = navigator.clipboard;
 
         if (clipboard && window.isSecureContext) {
             try {
-                await clipboard.writeText(prompt.body);
+                await clipboard.writeText(body);
                 onCopied(prompt);
 
                 return;

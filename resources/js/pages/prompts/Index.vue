@@ -18,6 +18,8 @@ import type {
 
 const props = defineProps<{
     prompts: Prompt[];
+    /* The one prompt carrying a body — resolved server-side from ?prompt=. */
+    selected: Prompt | null;
     filters: PromptFilters;
     canReorder: boolean;
 }>();
@@ -25,27 +27,26 @@ const props = defineProps<{
 const page = usePage();
 const { narrow } = useShellBreakpoints();
 
-const selectedId = ref<number | 'new' | null>(props.prompts[0]?.id ?? null);
+/* A draft is the one selection the server cannot know about yet. */
+const drafting = ref(false);
 const openDetail = ref(false);
 const editingProject = ref<Project | null>(null);
 
-const { filters, setFilter, search } = usePromptFilters(() => props.filters);
+const { filters, setFilter, search, selectPrompt } = usePromptFilters(
+    () => props.filters,
+);
 
+const selectedId = computed<number | 'new' | null>(() =>
+    drafting.value ? 'new' : (props.selected?.id ?? null),
+);
+
+/* Leaving the draft once it has been saved, or the list has moved on. */
 watch(
-    () => props.prompts,
-    (list) => {
-        if (selectedId.value === 'new') {
-            return;
+    () => props.selected?.id,
+    () => {
+        if (!drafting.value) {
+            openDetail.value = openDetail.value && props.selected !== null;
         }
-
-        if (
-            selectedId.value !== null &&
-            list.some((prompt) => prompt.id === selectedId.value)
-        ) {
-            return;
-        }
-
-        selectedId.value = list[0]?.id ?? null;
     },
 );
 
@@ -93,20 +94,8 @@ const scopeDotClass = computed<string>(() =>
         : 'bg-faint-foreground',
 );
 
-const selected = computed<Prompt | null>(() => {
-    if (selectedId.value === 'new') {
-        return null;
-    }
-
-    return (
-        props.prompts.find((prompt) => prompt.id === selectedId.value) ??
-        props.prompts[0] ??
-        null
-    );
-});
-
 const createDraft = (): void => {
-    selectedId.value = 'new';
+    drafting.value = true;
     openDetail.value = true;
 };
 
@@ -122,17 +111,23 @@ watch(
 );
 
 const handleSelect = (prompt: Prompt): void => {
-    selectedId.value = prompt.id;
+    drafting.value = false;
     openDetail.value = true;
+
+    if (prompt.id !== props.selected?.id) {
+        selectPrompt(prompt.id);
+    }
 };
 
 const handleCreated = (id: number): void => {
-    selectedId.value = id;
+    drafting.value = false;
+    selectPrompt(id);
 };
 
 const handleDeleted = (): void => {
-    selectedId.value = null;
+    drafting.value = false;
     openDetail.value = false;
+    selectPrompt(null);
 };
 
 const toggle = <T extends string>(list: T[], value: T): T[] =>
@@ -174,7 +169,7 @@ const toggle = <T extends string>(list: T[], value: T): T[] =>
 
     <PromptDetailPane
         v-if="!narrow || openDetail"
-        :prompt="selected"
+        :prompt="props.selected"
         :is-new="selectedId === 'new'"
         :narrow="narrow"
         :draft-project-id="captureProjectId"

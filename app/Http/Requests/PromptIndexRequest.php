@@ -19,6 +19,7 @@ class PromptIndexRequest extends FormRequest
     {
         return [
             'project' => ['nullable', 'string', 'regex:/^(inbox|[1-9][0-9]*)$/'],
+            'prompt' => ['nullable', 'integer'],
             'q' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'array'],
             'status.*' => [Rule::enum(PromptStatus::class)],
@@ -45,6 +46,14 @@ class PromptIndexRequest extends FormRequest
         $project = $this->string('project')->toString();
 
         return $project === 'inbox' ? null : (int) $project;
+    }
+
+    /**
+     * The prompt the editor should open, if the URL names one.
+     */
+    public function selectedPromptId(): ?int
+    {
+        return $this->filled('prompt') ? $this->integer('prompt') : null;
     }
 
     /**

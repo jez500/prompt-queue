@@ -37,8 +37,19 @@ class PromptController extends Controller
             ->orderByDesc('id')
             ->get();
 
+        /*
+          The editor's prompt is the only one whose body is sent. It is
+          resolved here rather than on the client so a link to ?prompt=<id>
+          opens that prompt directly.
+        */
+        $selected = $prompts->firstWhere('id', $request->selectedPromptId())
+            ?? $prompts->first();
+
         return Inertia::render('prompts/Index', [
             'prompts' => PromptResource::collection($prompts)->resolve(),
+            'selected' => $selected
+                ? (new PromptResource($selected))->withBody()->resolve()
+                : null,
             'canReorder' => $request->canReorder(),
             'filters' => [
                 'project' => $request->string('project')->toString() ?: null,

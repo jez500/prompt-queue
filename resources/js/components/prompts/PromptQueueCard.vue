@@ -36,9 +36,7 @@ const projectHref = computed(() =>
     }),
 );
 
-const preview = computed(
-    () => prompt.body.split('\n')[0] || 'Empty — open to write it',
-);
+const preview = computed(() => prompt.excerpt || 'Empty — open to write it');
 
 const setStatus = (status: PromptStatus): void => {
     router.patch(

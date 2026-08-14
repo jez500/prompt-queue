@@ -143,7 +143,7 @@ const handleCopy = async (): Promise<void> => {
         return;
     }
 
-    await copy(prompt);
+    await copy(prompt, autosave.body.value);
     copiedId.value = prompt.id;
     clearTimeout(copiedTimer);
     copiedTimer = setTimeout(() => {

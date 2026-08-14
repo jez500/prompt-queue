@@ -23,6 +23,76 @@ test('the index renders the workbench with open prompts only', function () {
         );
 });
 
+test('the list carries excerpts rather than whole bodies', function () {
+    $user = User::factory()->create();
+    Prompt::factory()->forUser($user)->create([
+        'title' => 'Long one',
+        'body' => "First line\n".str_repeat('padding ', 500),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('prompts.0.excerpt', 'First line')
+            ->missing('prompts.0.body')
+        );
+});
+
+test('the open prompt carries its body', function () {
+    $user = User::factory()->create();
+    $prompt = Prompt::factory()->forUser($user)->create(['body' => "Line one\nline two"]);
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('selected.id', $prompt->id)
+            ->where('selected.body', "Line one\nline two")
+        );
+});
+
+test('a prompt can be opened straight from a link', function () {
+    $user = User::factory()->create();
+    Prompt::factory()->forUser($user)->atPosition(0)->create(['body' => 'First']);
+    $wanted = Prompt::factory()->forUser($user)->atPosition(1)->create(['body' => 'Second']);
+
+    $this->actingAs($user)
+        ->get(route('prompts.index', ['prompt' => $wanted->id]))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('selected.id', $wanted->id)
+            ->where('selected.body', 'Second')
+        );
+});
+
+test('an unknown prompt falls back to the first in the list', function () {
+    $user = User::factory()->create();
+    $first = Prompt::factory()->forUser($user)->create();
+
+    $this->actingAs($user)
+        ->get(route('prompts.index', ['prompt' => 999999]))
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('selected.id', $first->id));
+});
+
+test('another user\'s prompt cannot be opened by id', function () {
+    $user = User::factory()->create();
+    $mine = Prompt::factory()->forUser($user)->create(['body' => 'Mine']);
+    $theirs = Prompt::factory()->create(['body' => 'Secret']);
+
+    $this->actingAs($user)
+        ->get(route('prompts.index', ['prompt' => $theirs->id]))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('selected.id', $mine->id)
+            ->where('selected.body', 'Mine')
+        );
+});
+
+test('an empty list selects nothing', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('selected', null));
+});
+
 test('done prompts appear when asked for', function () {
     $user = User::factory()->create();
     Prompt::factory()->forUser($user)->status(PromptStatus::Done)->create();

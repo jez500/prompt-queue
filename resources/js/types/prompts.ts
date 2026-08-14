@@ -9,7 +9,10 @@ export type Prompt = {
     id: number;
     title: string;
     rawTitle: string | null;
-    body: string;
+    /** One-line preview for the list; the full body is not sent with it. */
+    excerpt: string;
+    /** Only present on the selected prompt — see PromptResource::withBody(). */
+    body?: string;
     status: PromptStatus;
     priority: PromptPriority;
     position: number;

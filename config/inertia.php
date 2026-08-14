@@ -15,8 +15,25 @@ return [
     |
     */
 
+    /*
+     * Off, deliberately.
+     *
+     * Nothing builds or runs an SSR bundle — the image runs `npm run build`,
+     * not `build:ssr` — so production has always rendered on the client.
+     * Only `npm run dev` was pre-rendering, through the Vite plugin, and the
+     * shell decides its layout from `useShellBreakpoints`, which a server
+     * with no viewport resolves to the widest one. Vue then refuses to
+     * rectify the mismatched attributes ("Hydration attribute mismatch … The
+     * DOM will not be rectified"), so a narrow window loaded the desktop
+     * layout's widths and kept them.
+     *
+     * There is nothing to gain here either: every screen is behind auth, so
+     * there is no crawler or first-paint case to serve. Turning this on again
+     * means making the shell's breakpoints server-renderable first — CSS
+     * media queries rather than JS ones.
+     */
     'ssr' => [
-        'enabled' => true,
+        'enabled' => false,
         'url' => 'http://127.0.0.1:13714',
         // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
 

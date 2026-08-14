@@ -63,3 +63,16 @@ compact band rather than letting the row wrap.
 `TooltipProvider` is mounted once in `PromptQueueLayout`. Icon-only buttons
 need both a `Tooltip` and an `aria-label` — the tooltip is not an accessible
 name.
+
+## Inertia SSR is off, and the breakpoints are why
+
+`config/inertia.php` sets `ssr.enabled => false`. A server has no viewport, so
+`useShellBreakpoints` resolves to the widest layout there; Vue then declines to
+rectify the attributes that mismatch on hydration ("Hydration attribute
+mismatch ... The DOM will not be rectified"), and a narrow window kept the
+desktop widths for the life of the page. Nothing builds an SSR bundle either —
+the image runs `npm run build`, not `build:ssr` — so only `npm run dev` was
+pre-rendering, which made the bug look like a dev-only ghost.
+
+Turning SSR on again means making the shell's layout decision
+server-renderable first: CSS media queries rather than JS ones.

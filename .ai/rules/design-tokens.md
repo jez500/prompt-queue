@@ -60,12 +60,45 @@ A handful of one-off semantic hexes remain inline (the success green `#6FCFA1`,
 the delete-hover red `#FF8B9C`/`#5A2733`). That is accepted — they are meaning,
 not chrome. Do not "fix" them into neutral tokens.
 
-## Dark only, on purpose
+## Two themes, one token list
 
-`:root` and `.dark` share one palette, so the app renders dark regardless of
-the user's Appearance preference. The light/dark/system toggle still works as a
-no-op so the setting keeps functioning if a light theme is ever added. Do not
-"fix" this by deleting the toggle or by adding half a light theme.
+`:root` is the light palette and `.dark` is the one above. Both define the
+**same** token names — a token added to one must be added to the other, or it
+silently disappears when the user switches. `ThemePaletteTest` asserts that,
+and asserts the two disagree on every value that is not genuinely
+theme-independent.
+
+Light is the warm paper ramp from the redesign's light variant (direction 1b),
+not a wash of the dark one. Its neutrals are warm; the dark side's are
+blue-grey. Do not mix them.
+
+| Token | Light | Used for |
+| --- | --- | --- |
+| `background` | `#fbfaf9` | app background, detail pane |
+| `pane` | `#f7f5f3` | list pane |
+| `sidebar` | `#f4f2ef` | sidebar |
+| `card` / `popover` / `input` | `#ffffff` | cards, editor, menus, fields |
+| `muted` / `secondary` | `#f1eeea` | chips, inset controls |
+| `accent` / `surface-hover` | `#e8e5e1` | active nav row, hover |
+| `border` | `#e6e3df` | default borders |
+| `border-strong` | `#ddd9d4` | control borders |
+| `border-hover` | `#c9c2ba` | hover borders |
+| `ring` / `border-selected` | `#c9c2f0` | focus rings, selected card |
+| `foreground` → `ghost-foreground` | `#1b1a18` → `#a9a49d` | text ramp |
+| `primary` | `#5b45e0` | brand |
+| `destructive` | `#c43350` | destructive |
+
+The blade shell paints an inline `html` background before app.css lands
+(`#fbfaf9` / `#08080a`). Change it with the palette.
+
+### Semantic one-offs come in pairs
+
+The status and priority queue pills, and the inline meaning colours (success
+green, delete-hover red), are tints tuned for a near-black surface — on paper
+they turn to mud. Every one is written as a light value plus a `dark:` variant
+at the call site, e.g. `text-[#1F7A55] dark:text-[#6FCFA1]`. Adding a new one
+means adding both halves, and adding the light hex to the allowed list in
+`ShellConsistencyTest`.
 
 ## Type
 

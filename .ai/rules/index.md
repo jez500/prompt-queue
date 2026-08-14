@@ -14,6 +14,8 @@ glob.
 | `resources/js/components/shell/**`, `resources/js/layouts/**`, `resources/js/app.ts` | [shell.md](shell.md) — one app shell, layout resolution, breakpoints |
 | `resources/css/app.css`, `resources/js/**/*.vue` | [design-tokens.md](design-tokens.md) — theme tokens, no raw hex in chrome |
 | `resources/js/pages/**`, `resources/js/components/**`, `resources/js/composables/**` | [frontend.md](frontend.md) — Inertia pages, Vue conventions, Wayfinder |
+| `resources/js/composables/**` | [composables.md](composables.md) — partial-reload prop lists |
+| `app/Actions/**` | [actions.md](actions.md) — tag lifecycle |
 | `tests/**`, `app/**`, `database/**` | [testing.md](testing.md) — Pest, what must be covered |
 | `Dockerfile`, `docker/**`, `docker-compose.yml`, `.github/workflows/**` | [deployment.md](deployment.md) — image layout, entrypoint, publishing |
 | `.lando.yml`, `vite.config.ts` | [local-dev.md](local-dev.md) — Lando environment, Vite dev server |
@@ -23,4 +25,5 @@ glob.
 - Every authenticated screen renders in **one shell**. Do not build a second.
 - Style chrome from **theme tokens**, never raw hex.
 - Registration is closed; users are created with `php artisan pq:create-user`.
-- The app is **dark-only** by deliberate decision — see design-tokens.md.
+- There are **two palettes**, light and dark, defining the same token names —
+  see design-tokens.md.

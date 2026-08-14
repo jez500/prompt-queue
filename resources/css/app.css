@@ -118,13 +118,68 @@
 }
 
 /*
-  The prompt queue redesign has no light variant — :root and .dark share the
-  same dark palette so the app always matches the queue page, regardless of
-  the user's Appearance preference (light/dark/system still works as a
-  no-visual-op so the setting keeps functioning if a light theme is added
-  later).
+  Light theme — the warm paper palette from the "Light theme · same layout"
+  variant of the redesign (direction 1b). It is a straight counterpart to the
+  dark ramp below, token for token: surfaces run from `background` down to
+  `card`, borders come in the same four steps, and the foreground ramp
+  descends from `foreground` to `ghost-foreground`.
+
+  Neutrals are warm (a cream-to-stone ramp), not the blue-grey the dark side
+  uses. Do not mix the two.
 */
-:root,
+:root {
+    --background: #fbfaf9;
+    --foreground: #1b1a18;
+    --pane: #f7f5f3;
+    --subtle-foreground: #78746e;
+    --faint-foreground: #87827b;
+    --ghost-foreground: #a9a49d;
+    --surface-hover: #e8e5e1;
+    /* Cards are already white against a cream pane, so a selected one is
+       marked by `border-selected` rather than another surface step. */
+    --surface-selected: #ffffff;
+    --card: #ffffff;
+    --card-foreground: #1b1a18;
+    --popover: #ffffff;
+    --popover-foreground: #1b1a18;
+    --primary: #5b45e0;
+    --primary-foreground: #ffffff;
+    --secondary: #f1eeea;
+    --secondary-foreground: #43413d;
+    --muted: #f1eeea;
+    --muted-foreground: #6b675f;
+    --accent: #e8e5e1;
+    --accent-foreground: #1b1a18;
+    --destructive: #c43350;
+    --destructive-foreground: #ffffff;
+    --border: #e6e3df;
+    --border-strong: #ddd9d4;
+    --border-hover: #c9c2ba;
+    --border-selected: #c9c2f0;
+    /* The prompt body editor: a touch softer than `foreground`, so a long
+       mono block does not glare. */
+    --editor-foreground: #3b3934;
+    /* Brand tint for text on a primary wash, e.g. the active tag filter. */
+    --primary-soft: #4a36c4;
+    --input: #ffffff;
+    --ring: #c9c2f0;
+    --chart-1: #5b45e0;
+    --chart-2: #1080c4;
+    --chart-3: #0f8a5f;
+    --chart-4: #d9722c;
+    --chart-5: #c43350;
+    --radius: 0.6rem;
+    --sidebar-background: #f4f2ef;
+    --sidebar-foreground: #1b1a18;
+    --sidebar-primary: #5b45e0;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e8e5e1;
+    --sidebar-accent-foreground: #1b1a18;
+    --sidebar-border: #e6e3df;
+    --sidebar-ring: #c9c2f0;
+    --sidebar: #f4f2ef;
+}
+
 .dark {
     --background: #08080a;
     --foreground: #f2f2f4;
@@ -184,5 +239,48 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+
+    /*
+      Scrollbars are chrome: slim, unpainted until the pointer is near, and
+      drawn from the border ramp like every other edge in the app. Firefox
+      takes the two-property form; the rest take the WebKit pseudo-elements.
+    */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-strong) transparent;
+    }
+
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--border-strong);
+        border: 2px solid transparent;
+        border-radius: 9999px;
+        background-clip: content-box;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--border-hover);
+    }
+
+    /* Native form controls and the browser's own UI follow the theme. */
+    :root {
+        color-scheme: light;
+    }
+
+    .dark {
+        color-scheme: dark;
+    }
+
+    ::-webkit-scrollbar-corner {
+        background: transparent;
     }
 }

@@ -29,13 +29,18 @@ export const PROMPT_PRIORITY_FILTER_ACTIVE_CLASSES: Record<
 
 /**
  * Pill colours for the prompt queue's priority dropdown trigger, independent
- * of the light-mode badge classes above so the rest of the app is unaffected.
+ * of the badge classes above so the rest of the app is unaffected.
+ *
+ * One pair per theme: the dark tints are washes over a near-black surface and
+ * lose all their contrast on paper.
  */
 export const PROMPT_PRIORITY_QUEUE_PILL_CLASSES: Record<
     PromptPriority,
     string
 > = {
-    high: 'text-[#FF8B9C] bg-[#FF4D6D]/15',
-    normal: 'text-[#EAB35F] bg-[#EAB35F]/13',
-    low: 'text-[#8A8A96] bg-[#17171E]',
+    high: 'text-[#C43350] bg-[#FBE9EC] dark:text-[#FF8B9C] dark:bg-[#FF4D6D]/15',
+    /* Normal is the resting state and reads as neutral; the amber belongs to
+       low, which is a deliberate choice the queue should show. */
+    normal: 'text-[#6B675F] bg-[#F1EEEA] dark:text-[#8A8A96] dark:bg-[#17171E]',
+    low: 'text-[#8A6A22] bg-[#F7EFDE] dark:text-[#EAB35F] dark:bg-[#EAB35F]/13',
 };

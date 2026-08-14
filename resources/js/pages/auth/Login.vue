@@ -29,7 +29,7 @@ defineProps<{
 
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-[#6FCFA1]"
+        class="mb-4 text-center text-sm font-medium text-[#1F7A55] dark:text-[#6FCFA1]"
     >
         {{ status }}
     </div>

@@ -56,6 +56,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trusted Proxies
+    |--------------------------------------------------------------------------
+    |
+    | The container serves plain HTTP and expects TLS to be terminated at a
+    | proxy, so the original scheme only survives in X-Forwarded-Proto. Until
+    | that header is trusted every generated URL comes back as http:// on a
+    | page the browser loaded over https, and the browser blocks the lot as
+    | mixed content.
+    |
+    | Defaults to trusting any proxy, because the image is only ever meant to
+    | be reached through one. Narrow it to your proxy's address — a comma
+    | separated list is fine — if the container is reachable directly.
+    |
+    | This must be read from config rather than env(): the entrypoint runs
+    | `php artisan config:cache`, after which env() returns null.
+    |
+    */
+
+    'trusted_proxies' => env('TRUSTED_PROXIES', '*'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

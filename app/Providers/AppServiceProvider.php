@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Enums\SsoProvider;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -28,7 +29,26 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureProxies();
         $this->configureSocialite();
+    }
+
+    /**
+     * Trust the reverse proxy that terminates TLS.
+     *
+     * `TrustProxies` is already in the global middleware stack; it just has no
+     * proxy list until something sets one. Without it the original scheme in
+     * X-Forwarded-Proto is ignored, every generated URL comes out as http on a
+     * page served over https, and the browser blocks the assets as mixed
+     * content.
+     *
+     * This belongs here rather than in `bootstrap/app.php`: `config` is not
+     * bound when the middleware closure runs there, and reading `env()`
+     * instead would return null once the entrypoint has run `config:cache`.
+     */
+    protected function configureProxies(): void
+    {
+        TrustProxies::at(config('app.trusted_proxies'));
     }
 
     /**

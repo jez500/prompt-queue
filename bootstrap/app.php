@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->redirectUsersTo('/prompts');
+        /* Trusted proxies are set in AppServiceProvider, not here — `config`
+           is not bound yet at this point in the bootstrap. */
 
         $middleware->web(append: [
             HandleAppearance::class,

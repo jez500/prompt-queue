@@ -68,6 +68,23 @@ deleting a git tag does not unpublish an image: a mistaken `v1.1.0` leaves
 `:1.1.0` and `:1.1` sitting in the registry forever, and `:latest` points at
 that build until something later replaces it.
 
+## Trusted proxies are set in a provider, not bootstrap/app.php
+
+`AppServiceProvider::configureProxies()` calls `TrustProxies::at()`. It reads
+`config('app.trusted_proxies')`, and it cannot move to the obvious-looking
+`$middleware->trustProxies()` in `bootstrap/app.php`: `config` is not bound when
+that closure runs and the container throws
+`ReflectionException: Class "config" does not exist`.
+
+Reading `env('TRUSTED_PROXIES')` directly is the other trap — the entrypoint
+runs `php artisan config:cache`, after which `env()` returns null everywhere
+outside `config/`. That failure is invisible locally and total in the image.
+
+`TrustProxies` is already in the framework's global middleware stack; it just
+has an empty proxy list until something sets one. Without it every generated
+URL is `http://` on a page served over `https` and the browser blocks the
+assets. `ReverseProxyTest` pins it.
+
 ## Registration is closed
 
 `config/fortify.php` enables only `resetPasswords()`. The first user is created

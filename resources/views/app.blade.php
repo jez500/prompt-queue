@@ -36,6 +36,19 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+        {{-- The manifest carries one theme_color, but the app has two palettes.
+             These paired metas are what actually tints the mobile browser
+             chrome, so they track --background the same way the style above
+             does, and change with it. --}}
+        <meta name="theme-color" content="#fbfaf9" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#08080a" media="(prefers-color-scheme: dark)">
+
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Prompt Queue') }}">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+        <link rel="manifest" href="{{ route('manifest') }}">
+
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])

@@ -46,7 +46,13 @@ const setStatus = (status: PromptStatus): void => {
     router.patch(
         PromptStatusController.url({ prompt: prompt.id }),
         { status },
-        { preserveScroll: true, preserveState: true, only: ['prompts'] },
+        {
+            preserveScroll: true,
+            preserveState: true,
+            /* Closing a prompt takes it out of the open counts, so the scope
+               rows come back with it. */
+            only: ['prompts', 'projects', 'inboxOpenPromptsCount'],
+        },
     );
 };
 

@@ -269,8 +269,7 @@ const removeTag = (name: string): void => {
             </PaneHeader>
 
             <div
-                class="relative flex flex-1 flex-col gap-[18px] overflow-hidden"
-                :class="narrow ? 'p-4' : 'px-[26px] py-[22px]'"
+                class="relative flex flex-1 flex-col gap-[18px] overflow-hidden p-4"
             >
                 <div class="flex flex-wrap items-center gap-2.5">
                     <PromptStatusPill

@@ -91,3 +91,32 @@ test('projects and tags are shared with every authenticated page', function () {
             ->where('tags', ['bug'])
         );
 });
+
+test('the shared inbox count covers open prompts with no project', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->forUser($user)->create();
+    Prompt::factory()->forUser($user)->status(PromptStatus::Todo)->create();
+    Prompt::factory()->forUser($user)->status(PromptStatus::Implementing)->create();
+    Prompt::factory()->forUser($user)->status(PromptStatus::Done)->create();
+    Prompt::factory()->forUser($user)->inProject($project)->status(PromptStatus::Todo)->create();
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('inboxOpenPromptsCount', 2)
+        );
+});
+
+/* The sidebar hides the "No project" row on a zero, so the zero has to be
+   reported rather than left to a stale count. */
+test('the shared inbox count is zero when everything is filed', function () {
+    $user = User::factory()->create();
+    $project = Project::factory()->forUser($user)->create();
+    Prompt::factory()->forUser($user)->inProject($project)->status(PromptStatus::Todo)->create();
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('inboxOpenPromptsCount', 0)
+        );
+});

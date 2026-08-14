@@ -21,6 +21,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             projects: Project[];
+            inboxOpenPromptsCount: number;
             tags: string[];
             [key: string]: unknown;
         };

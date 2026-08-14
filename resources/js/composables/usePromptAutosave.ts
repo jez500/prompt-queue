@@ -259,7 +259,13 @@ export function usePromptAutosave(options: Options) {
             {
                 preserveScroll: true,
                 preserveState: true,
-                only: ['prompts', 'projects', 'canReorder', 'tags'],
+                only: [
+                    'prompts',
+                    'projects',
+                    'inboxOpenPromptsCount',
+                    'canReorder',
+                    'tags',
+                ],
                 onSuccess: () => {
                     const created = knownPrompts().find(
                         (entry) => !knownIds.has(entry.id),
@@ -328,7 +334,9 @@ export function usePromptAutosave(options: Options) {
             {
                 preserveScroll: true,
                 preserveState: true,
-                only: ['prompts'],
+                /* Closing a prompt takes it out of the open counts, so the
+                   scope rows come back with it. */
+                only: ['prompts', 'projects', 'inboxOpenPromptsCount'],
                 onError: () => toast.error('Could not update the status.'),
             },
         );
@@ -414,7 +422,13 @@ export function usePromptAutosave(options: Options) {
             {
                 preserveScroll: true,
                 preserveState: true,
-                only: ['prompts', 'selected', 'projects', 'canReorder'],
+                only: [
+                    'prompts',
+                    'selected',
+                    'projects',
+                    'inboxOpenPromptsCount',
+                    'canReorder',
+                ],
                 onSuccess: () => onMoved?.(),
                 onError: () => toast.error('Could not move the prompt.'),
             },

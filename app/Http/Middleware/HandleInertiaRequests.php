@@ -40,6 +40,8 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        $openStatuses = array_map(fn (PromptStatus $status) => $status->value, PromptStatus::open());
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -49,14 +51,16 @@ class HandleInertiaRequests extends Middleware
             'projects' => $user
                 ? ProjectResource::collection(
                     $user->projects()
-                        ->withCount(['prompts as open_prompts_count' => fn (Builder $query) => $query->whereIn('status', [
-                            PromptStatus::Todo->value,
-                            PromptStatus::Implementing->value,
-                        ])])
+                        ->withCount(['prompts as open_prompts_count' => fn (Builder $query) => $query->whereIn('status', $openStatuses)])
                         ->orderBy('name')
                         ->get()
                 )->resolve()
                 : [],
+            /* Drives the "No project" scope row, which is hidden entirely when
+               nothing is unfiled rather than sitting there reading zero. */
+            'inboxOpenPromptsCount' => $user
+                ? $user->prompts()->whereNull('project_id')->whereIn('status', $openStatuses)->count()
+                : 0,
             /* Only tags that are actually on a prompt. They are deleted when
                their last prompt goes, but rows orphaned before that ran would
                otherwise sit in the filter bar with nothing to filter. */

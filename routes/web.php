@@ -5,6 +5,7 @@ use App\Http\Controllers\PromptController;
 use App\Http\Controllers\PromptOrderController;
 use App\Http\Controllers\PromptPriorityController;
 use App\Http\Controllers\PromptStatusController;
+use App\Http\Controllers\WebManifestController;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,8 @@ Route::get('/', function (): RedirectResponse {
 
     return redirect()->route('login');
 })->name('home');
+
+Route::get('manifest.webmanifest', WebManifestController::class)->name('manifest');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', 'prompts')->name('dashboard');

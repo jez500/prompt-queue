@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Offline &middot; Prompt Queue</title>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+        <!--
+            Styles are inline because this page is served by the service worker
+            when the network is gone, and app.css lives behind a build hash it
+            cannot resolve offline. Same accepted exception as the first-paint
+            background in app.blade.php: the palette values are duplicated here
+            and must be changed alongside it.
+        -->
+        <style>
+            :root {
+                color-scheme: light dark;
+                --background: #fbfaf9;
+                --card: #ffffff;
+                --border: #e6e3df;
+                --foreground: #1b1a18;
+                --muted-foreground: #8a8a96;
+                --primary: #5b45e0;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --background: #08080a;
+                    --card: #0d0d12;
+                    --border: #1c1c24;
+                    --foreground: #f2f2f4;
+                    --muted-foreground: #8a8a96;
+                    --primary: #6e56f8;
+                }
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100dvh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1.5rem;
+                background-color: var(--background);
+                color: var(--foreground);
+                font-family:
+                    'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui,
+                    sans-serif;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            .card {
+                width: 100%;
+                max-width: 24rem;
+                padding: 2rem;
+                border: 1px solid var(--border);
+                border-radius: 0.75rem;
+                background-color: var(--card);
+                text-align: center;
+            }
+
+            .mark {
+                width: 3.25rem;
+                height: 3.25rem;
+                margin: 0 auto 1.25rem;
+            }
+
+            h1 {
+                margin: 0 0 0.5rem;
+                font-size: 1.125rem;
+                font-weight: 700;
+                letter-spacing: -0.01em;
+            }
+
+            p {
+                margin: 0 0 1.5rem;
+                font-size: 0.875rem;
+                line-height: 1.5;
+                color: var(--muted-foreground);
+            }
+
+            button {
+                width: 100%;
+                padding: 0.625rem 1rem;
+                border: 0;
+                border-radius: 0.5rem;
+                background-color: var(--primary);
+                color: #ffffff;
+                font: inherit;
+                font-size: 0.875rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            button:hover {
+                opacity: 0.9;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="card">
+            <img class="mark" src="/favicon.svg" alt="" width="52" height="52" />
+            <h1>You&rsquo;re offline</h1>
+            <p>
+                Prompt Queue needs a connection to load your queue. Reconnect and
+                try again.
+            </p>
+            <button type="button" onclick="window.location.reload()">
+                Retry
+            </button>
+        </main>
+    </body>
+</html>

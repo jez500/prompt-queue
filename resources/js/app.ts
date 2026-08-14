@@ -4,6 +4,7 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import PromptQueueLayout from '@/layouts/prompts/PromptQueueLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+import { registerServiceWorker } from '@/lib/serviceWorker';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Prompt Queue';
 
@@ -34,3 +35,6 @@ initializeTheme();
 
 // This will listen for flash toast data from the server...
 initializeFlashToast();
+
+// This makes the app installable and serves the offline page in production...
+registerServiceWorker();

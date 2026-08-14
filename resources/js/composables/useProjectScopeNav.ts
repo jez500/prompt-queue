@@ -28,6 +28,8 @@ export function useProjectScopeNav() {
 
     const projects = computed(() => page.props.projects);
 
+    const inboxCount = computed(() => page.props.inboxOpenPromptsCount);
+
     const currentUrl = computed(() => new URL(page.url, 'http://localhost'));
 
     const currentProject = computed<string | null>(() =>
@@ -40,6 +42,18 @@ export function useProjectScopeNav() {
      * would light up "All prompts" while the user is somewhere else entirely.
      */
     const onQueue = computed(() => currentUrl.value.pathname === index().url);
+
+    /**
+     * The Inbox is not a project the user made, so it only earns a row while
+     * something is unfiled. It stays while it is the current scope, otherwise
+     * filing the last unfiled prompt would pull the row out from under the
+     * screen the user is looking at.
+     */
+    const showInbox = computed(
+        () =>
+            inboxCount.value > 0 ||
+            (onQueue.value && currentProject.value === 'inbox'),
+    );
 
     const items = computed<ProjectScopeItem[]>(() => [
         {
@@ -63,16 +77,20 @@ export function useProjectScopeNav() {
             count: project.openPromptsCount,
             initials: getInitials(project.name),
         })),
-        {
-            id: 'inbox',
-            name: 'No project',
-            href: index({ query: { project: 'inbox' } }),
-            active: onQueue.value && currentProject.value === 'inbox',
-            color: null,
-            dotClass: NEUTRAL_DOT_CLASS,
-            count: null,
-            initials: getInitials('No project'),
-        },
+        ...(showInbox.value
+            ? [
+                  {
+                      id: 'inbox',
+                      name: 'No project',
+                      href: index({ query: { project: 'inbox' } }),
+                      active: onQueue.value && currentProject.value === 'inbox',
+                      color: null,
+                      dotClass: NEUTRAL_DOT_CLASS,
+                      count: inboxCount.value,
+                      initials: getInitials('No project'),
+                  },
+              ]
+            : []),
     ]);
 
     return { items, currentProject };

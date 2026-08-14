@@ -19,6 +19,8 @@ glob.
 | `tests/**`, `app/**`, `database/**` | [testing.md](testing.md) — Pest, what must be covered |
 | `Dockerfile`, `docker/**`, `docker-compose.yml`, `.github/workflows/**` | [deployment.md](deployment.md) — image layout, entrypoint, publishing |
 | `.lando.yml`, `vite.config.ts` | [local-dev.md](local-dev.md) — Lando environment, Vite dev server |
+| `resources/icons/**` | [icons.md](icons.md) — one source SVG, `npm run icons`, committed output |
+| `public/sw.js`, `public/offline.html` | [public.md](public.md) — service worker scope, why it only handles navigations |
 
 ## The short version
 

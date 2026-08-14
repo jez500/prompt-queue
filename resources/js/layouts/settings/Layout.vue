@@ -49,10 +49,7 @@ const sectionTitle = computed(
             @back="showNav = true"
         />
 
-        <div
-            class="flex flex-1 flex-col overflow-y-auto"
-            :class="narrow ? 'p-4' : 'px-[26px] py-[22px]'"
-        >
+        <div class="flex flex-1 flex-col overflow-y-auto p-4">
             <section class="max-w-xl space-y-12">
                 <slot />
             </section>

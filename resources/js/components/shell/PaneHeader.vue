@@ -23,7 +23,7 @@ const { compact } = useShellBreakpoints();
 <template>
     <div
         class="flex min-h-[60px] flex-none flex-nowrap items-center gap-2.5 border-b border-sidebar-border"
-        :class="narrow ? 'px-3.5' : compact ? 'px-4' : 'px-6'"
+        :class="narrow ? 'px-3.5' : 'px-4'"
     >
         <button
             v-if="narrow"

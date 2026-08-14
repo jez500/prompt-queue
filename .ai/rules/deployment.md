@@ -56,6 +56,18 @@ Requires repo secrets **`DOCKERHUB_USERNAME`** and **`DOCKERHUB_TOKEN`**.
 Pin actions by commit SHA with a trailing version comment, matching
 `tests.yml`. Never invent a SHA — resolve it (`gh api repos/OWNER/REPO/commits/TAG --jq .sha`).
 
+### Bumping the tag means incrementing the last number
+
+`v1.0.1` → `v1.0.2` → `v1.0.3`. **Always.** Do not read the size of a change
+and decide it deserves `v1.1.0` — a new feature is still a last-number bump.
+Jez will say so explicitly when a release should move the first or second
+number; until then that is not a judgement call to make.
+
+Getting it wrong is expensive to undo. The tag publishes to Docker Hub, and
+deleting a git tag does not unpublish an image: a mistaken `v1.1.0` leaves
+`:1.1.0` and `:1.1` sitting in the registry forever, and `:latest` points at
+that build until something later replaces it.
+
 ## Registration is closed
 
 `config/fortify.php` enables only `resetPasswords()`. The first user is created

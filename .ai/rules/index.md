@@ -21,6 +21,7 @@ glob.
 | `.lando.yml`, `vite.config.ts` | [local-dev.md](local-dev.md) — Lando environment, Vite dev server |
 | `resources/icons/**` | [icons.md](icons.md) — one source SVG, `npm run icons`, committed output |
 | `public/sw.js`, `public/offline.html` | [public.md](public.md) — service worker scope, why it only handles navigations |
+| `resources/js/components/prompts/PromptQueueSidebar.vue` | [prompts.md](prompts.md) — what may go inside the sidebar draggable |
 
 ## The short version
 

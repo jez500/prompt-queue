@@ -16,10 +16,11 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property string $name
  * @property ProjectColor $color
+ * @property int $position
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'color'])]
+#[Fillable(['name', 'color', 'position'])]
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
@@ -34,7 +35,19 @@ class Project extends Model
     {
         return [
             'color' => ProjectColor::class,
+            'position' => 'integer',
         ];
+    }
+
+    /**
+     * The position a newly created project should take: the end of the user's
+     * list, so making one never reshuffles the order they arranged by hand.
+     */
+    public static function nextPositionFor(User $user): int
+    {
+        $highest = $user->projects()->max('position');
+
+        return $highest === null ? 0 : (int) $highest + 1;
     }
 
     /**

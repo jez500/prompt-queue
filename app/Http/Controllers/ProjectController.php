@@ -19,7 +19,10 @@ class ProjectController extends Controller
      */
     public function store(ProjectStoreRequest $request): RedirectResponse
     {
-        $request->user()->projects()->create($request->validated());
+        $request->user()->projects()->create([
+            ...$request->validated(),
+            'position' => Project::nextPositionFor($request->user()),
+        ]);
 
         return back();
     }

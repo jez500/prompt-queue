@@ -23,7 +23,18 @@ class ProjectFactory extends Factory
             'user_id' => User::factory(),
             'name' => fake()->unique()->words(2, true),
             'color' => fake()->randomElement(ProjectColor::cases()),
+            'position' => 0,
         ];
+    }
+
+    /**
+     * Give the project a specific position in its user's sidebar order.
+     */
+    public function atPosition(int $position): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'position' => $position,
+        ]);
     }
 
     /**

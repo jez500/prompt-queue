@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectOrderController;
 use App\Http\Controllers\PromptController;
 use App\Http\Controllers\PromptOrderController;
 use App\Http\Controllers\PromptPriorityController;
@@ -31,6 +32,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('prompts/{prompt}', [PromptController::class, 'destroy'])->name('prompts.destroy');
 
     Route::post('projects', [ProjectController::class, 'store'])->name('projects.store');
+    /* Declared before projects/{project} or the wildcard swallows "reorder". */
+    Route::patch('projects/reorder', ProjectOrderController::class)->name('projects.reorder');
     Route::patch('projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
     Route::delete('projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 });

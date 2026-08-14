@@ -55,18 +55,24 @@ export function useProjectScopeNav() {
             (onQueue.value && currentProject.value === 'inbox'),
     );
 
-    const items = computed<ProjectScopeItem[]>(() => [
-        {
-            id: 'all',
-            name: 'All prompts',
-            href: index(),
-            active: onQueue.value && currentProject.value === null,
-            color: null,
-            dotClass: NEUTRAL_DOT_CLASS,
-            count: null,
-            initials: getInitials('All prompts'),
-        },
-        ...projects.value.map((project) => ({
+    const allPromptsItem = computed<ProjectScopeItem>(() => ({
+        id: 'all',
+        name: 'All prompts',
+        href: index(),
+        active: onQueue.value && currentProject.value === null,
+        color: null,
+        dotClass: NEUTRAL_DOT_CLASS,
+        count: null,
+        initials: getInitials('All prompts'),
+    }));
+
+    /**
+     * Exposed separately from `items` because these are the only rows the user
+     * may reorder — "All prompts" and the Inbox are fixed ends, not projects.
+     * The sidebar drags this list; the narrow topbar just renders `items`.
+     */
+    const projectItems = computed<ProjectScopeItem[]>(() =>
+        projects.value.map((project) => ({
             id: String(project.id),
             name: project.name,
             href: index({ query: { project: String(project.id) } }),
@@ -77,21 +83,28 @@ export function useProjectScopeNav() {
             count: project.openPromptsCount,
             initials: getInitials(project.name),
         })),
-        ...(showInbox.value
-            ? [
-                  {
-                      id: 'inbox',
-                      name: 'No project',
-                      href: index({ query: { project: 'inbox' } }),
-                      active: onQueue.value && currentProject.value === 'inbox',
-                      color: null,
-                      dotClass: NEUTRAL_DOT_CLASS,
-                      count: inboxCount.value,
-                      initials: getInitials('No project'),
-                  },
-              ]
-            : []),
+    );
+
+    const inboxItem = computed<ProjectScopeItem | null>(() =>
+        showInbox.value
+            ? {
+                  id: 'inbox',
+                  name: 'No project',
+                  href: index({ query: { project: 'inbox' } }),
+                  active: onQueue.value && currentProject.value === 'inbox',
+                  color: null,
+                  dotClass: NEUTRAL_DOT_CLASS,
+                  count: inboxCount.value,
+                  initials: getInitials('No project'),
+              }
+            : null,
+    );
+
+    const items = computed<ProjectScopeItem[]>(() => [
+        allPromptsItem.value,
+        ...projectItems.value,
+        ...(inboxItem.value ? [inboxItem.value] : []),
     ]);
 
-    return { items, currentProject };
+    return { items, allPromptsItem, projectItems, inboxItem, currentProject };
 }

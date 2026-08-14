@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { ChevronsUpDown } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import draggable from 'vuedraggable';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import ProjectFormDialog from '@/components/projects/ProjectFormDialog.vue';
+import ProjectScopeRow from '@/components/prompts/ProjectScopeRow.vue';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,12 +13,16 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useInitials } from '@/composables/useInitials';
+import type { ProjectScopeItem } from '@/composables/useProjectScopeNav';
 import { useProjectScopeNav } from '@/composables/useProjectScopeNav';
-import {
-    PROJECT_BORDER_CLASSES,
-    PROJECT_TEXT_CLASSES,
-} from '@/lib/projectColors';
+import { reorder } from '@/routes/projects';
 import { index } from '@/routes/prompts';
+
+/** Long enough to be deliberate, short enough that the cue explains the wait. */
+const REORDER_DELAY = 800;
+
+/** How long a drop keeps swallowing clicks, in ms. */
+const CLICK_SUPPRESSION = 250;
 
 const { collapsed } = defineProps<{ collapsed: boolean }>();
 
@@ -25,7 +31,48 @@ const emit = defineEmits<{ toggle: [] }>();
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const { getInitials } = useInitials();
-const { items } = useProjectScopeNav();
+const { allPromptsItem, projectItems, inboxItem } = useProjectScopeNav();
+
+const ordered = ref<ProjectScopeItem[]>([...projectItems.value]);
+
+watch(projectItems, (value) => {
+    ordered.value = [...value];
+});
+
+/*
+  A drag finishes with a click on whatever row it dropped onto, which would
+  otherwise navigate away the instant the user let go. Bounded by a timeout
+  rather than the request, so a slow reorder cannot leave the rows unclickable.
+*/
+const justDragged = ref(false);
+
+function suppressClosingClick(): void {
+    justDragged.value = true;
+
+    window.setTimeout(() => {
+        justDragged.value = false;
+    }, CLICK_SUPPRESSION);
+}
+
+function persist(): void {
+    const snapshot = [...projectItems.value];
+
+    suppressClosingClick();
+
+    router.patch(
+        reorder.url(),
+        { ids: ordered.value.map((item) => Number(item.id)) },
+        {
+            preserveScroll: true,
+            preserveState: true,
+            /* A reorder is only ever visible in the project rows. */
+            only: ['projects'],
+            onError: () => {
+                ordered.value = snapshot;
+            },
+        },
+    );
+}
 </script>
 
 <template>
@@ -100,61 +147,35 @@ const { items } = useProjectScopeNav();
                 </ProjectFormDialog>
             </div>
 
-            <Link
-                v-for="item in items"
-                :key="item.id"
-                :href="item.href"
-                :title="item.name"
-                class="flex items-center gap-2.5 rounded-lg hover:bg-popover"
-                :class="[
-                    collapsed
-                        ? 'h-10 justify-center'
-                        : 'h-8 justify-start px-2.5',
-                    !collapsed && item.active ? 'bg-accent' : '',
-                ]"
+            <ProjectScopeRow :item="allPromptsItem" :collapsed="collapsed" />
+
+            <!-- Only the projects reorder: "All prompts" and the Inbox are
+                 fixed ends of the list, not things the user arranged. -->
+            <draggable
+                v-model="ordered"
+                item-key="id"
+                :delay="REORDER_DELAY"
+                :touch-start-threshold="10"
+                :animation="150"
+                ghost-class="opacity-40"
+                class="flex flex-col gap-1.5"
+                @end="persist"
             >
-                <div
-                    v-if="collapsed"
-                    class="flex size-9 flex-none items-center justify-center rounded-[10px] border-2 text-[11px] font-bold tracking-wide"
-                    :class="[
-                        item.active ? 'bg-accent' : 'bg-card',
-                        item.active && item.color
-                            ? PROJECT_BORDER_CLASSES[item.color]
-                            : item.active
-                              ? 'border-faint-foreground'
-                              : 'border-border',
-                        item.active && item.color
-                            ? PROJECT_TEXT_CLASSES[item.color]
-                            : item.active
-                              ? 'text-faint-foreground'
-                              : 'text-muted-foreground',
-                    ]"
-                >
-                    {{ item.initials }}
-                </div>
-                <span
-                    v-else
-                    class="size-1.5 flex-none rounded-full"
-                    :class="item.dotClass"
-                />
-                <span
-                    v-if="!collapsed"
-                    class="min-w-0 flex-1 truncate text-[13px]"
-                    :class="
-                        item.active
-                            ? 'font-semibold text-foreground'
-                            : 'font-normal text-secondary-foreground'
-                    "
-                >
-                    {{ item.name }}
-                </span>
-                <span
-                    v-if="!collapsed && item.count !== null"
-                    class="font-mono text-[11px] text-subtle-foreground"
-                >
-                    {{ item.count }}
-                </span>
-            </Link>
+                <template #item="{ element }: { element: ProjectScopeItem }">
+                    <ProjectScopeRow
+                        :item="element"
+                        :collapsed="collapsed"
+                        :reorderable="true"
+                        :suppress-navigation="justDragged"
+                    />
+                </template>
+            </draggable>
+
+            <ProjectScopeRow
+                v-if="inboxItem"
+                :item="inboxItem"
+                :collapsed="collapsed"
+            />
         </div>
 
         <DropdownMenu>

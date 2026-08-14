@@ -52,6 +52,7 @@ class HandleInertiaRequests extends Middleware
                 ? ProjectResource::collection(
                     $user->projects()
                         ->withCount(['prompts as open_prompts_count' => fn (Builder $query) => $query->whereIn('status', $openStatuses)])
+                        ->orderBy('position')
                         ->orderBy('name')
                         ->get()
                 )->resolve()

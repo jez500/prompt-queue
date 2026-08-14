@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import SsoLoginButtons from '@/components/auth/SsoLoginButtons.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
+import type { SsoProvider } from '@/types/auth';
 
 defineOptions({
     layout: {
@@ -18,9 +20,11 @@ defineOptions({
     },
 });
 
-defineProps<{
+const { ssoProviders = [] } = defineProps<{
     status?: string;
     canResetPassword: boolean;
+    ssoProviders?: SsoProvider[];
+    ssoError?: string;
 }>();
 </script>
 
@@ -32,6 +36,29 @@ defineProps<{
         class="mb-4 text-center text-sm font-medium text-[#1F7A55] dark:text-[#6FCFA1]"
     >
         {{ status }}
+    </div>
+
+    <div
+        v-if="ssoError"
+        class="mb-4 text-center text-sm font-medium text-destructive"
+        data-test="sso-error"
+    >
+        {{ ssoError }}
+    </div>
+
+    <!-- No bottom margin: AuthSimpleLayout already spaces slot children. -->
+    <div v-if="ssoProviders.length" class="flex flex-col gap-6">
+        <SsoLoginButtons :providers="ssoProviders" />
+
+        <div class="relative text-center text-sm">
+            <span
+                class="absolute inset-0 top-1/2 border-t border-border"
+                aria-hidden="true"
+            />
+            <span class="relative bg-background px-2 text-muted-foreground">
+                or continue with email
+            </span>
+        </div>
     </div>
 
     <Form

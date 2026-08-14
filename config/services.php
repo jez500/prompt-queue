@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    /*
+     * Single sign-on through Authelia. The key must stay named "authelia" —
+     * Socialite looks the config up by driver name. Leaving the client id or
+     * secret empty turns the whole feature off; see App\Enums\SsoProvider.
+     */
+    'authelia' => [
+        'base_url' => env('AUTHELIA_BASE_URL', 'https://auth.app.jez.me'),
+        'client_id' => env('AUTHELIA_CLIENT_ID'),
+        'client_secret' => env('AUTHELIA_CLIENT_SECRET'),
+        'redirect' => env('AUTHELIA_REDIRECT_URI'),
+    ],
+
 ];

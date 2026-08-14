@@ -60,5 +60,9 @@ Pin actions by commit SHA with a trailing version comment, matching
 
 `config/fortify.php` enables only `resetPasswords()`. The first user is created
 with `php artisan pq:create-user`. If you ever enable `Features::registration()`,
-say so loudly in the README — it changes a self-hosted instance from
-invite-only to open signup.
+say so loudly in the README and `docs/authentication.md` — it changes a
+self-hosted instance from invite-only to open signup.
+
+Authelia single sign-on is optional and does not change this: it links a
+provider login to an account that already exists and refuses when none does.
+See [actions.md](actions.md) before touching that path.

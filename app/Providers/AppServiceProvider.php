@@ -2,11 +2,15 @@
 
 namespace App\Providers;
 
+use App\Enums\SsoProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use SocialiteProviders\Authelia\Provider as AutheliaProvider;
+use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureSocialite();
     }
 
     /**
@@ -46,5 +51,18 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Register the community Socialite drivers.
+     *
+     * Unlike Socialite's built-in providers these are not auto-discovered —
+     * without this listener `Socialite::driver('authelia')` throws.
+     */
+    protected function configureSocialite(): void
+    {
+        Event::listen(function (SocialiteWasCalled $event): void {
+            $event->extendSocialite(SsoProvider::Authelia->value, AutheliaProvider::class);
+        });
     }
 }

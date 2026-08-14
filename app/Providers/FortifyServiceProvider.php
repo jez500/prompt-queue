@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\ResetUserPassword;
+use App\Enums\SsoProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -49,6 +50,18 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/Login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
+            /* Empty unless credentials are configured, which is what keeps the
+               single sign-on button off the page on a stock instance. */
+            'ssoProviders' => array_map(
+                fn (SsoProvider $provider): array => [
+                    'name' => $provider->value,
+                    'label' => $provider->label(),
+                ],
+                SsoProvider::enabled(),
+            ),
+            /* A plain prop rather than a flash toast: the auth shell mounts no
+               Toaster, so a toast here would be swallowed silently. */
+            'ssoError' => $request->session()->get('ssoError'),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [

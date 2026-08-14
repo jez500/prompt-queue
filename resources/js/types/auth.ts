@@ -13,6 +13,13 @@ export type Auth = {
     user: User;
 };
 
+/* A single sign-on provider this instance has credentials for. The login page
+   receives an empty list when none are configured. */
+export type SsoProvider = {
+    name: string;
+    label: string;
+};
+
 /* @chisel-passkeys */
 export type Passkey = {
     id: number;

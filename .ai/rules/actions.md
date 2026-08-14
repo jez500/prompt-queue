@@ -14,3 +14,24 @@ its tags.
 
 The shared `tags` prop is filtered with `whereHas('prompts')` as well, which
 keeps rows orphaned before the purge existed off the screen.
+
+## Single sign-on never creates users
+
+Registration is closed, and SSO does not reopen it. `LinkSsoIdentity` resolves
+an Authelia login to a local user in this order: known OIDC subject in
+`user_identities`, then an existing user with the same email, then **null** —
+never a new user. The callback turns null into "ask an administrator to create
+one first" and leaves the session guest.
+
+The subject is checked before the email deliberately: an address reassigned at
+the identity provider must not hand someone a different local account.
+`SsoTest` pins both, and the "does not provision" test is the one that matters.
+
+The email fallback is rejected only when the provider explicitly reports
+`email_verified: false`. An absent claim is allowed through — not every
+provider sends one, and refusing those would make first-time linking impossible
+with no way for an admin to fix it.
+
+If you ever add self-provisioning, it changes a self-hosted instance from
+invite-only to "anyone Authelia will authenticate" — say so loudly in the
+README and `docs/authentication.md`, same as enabling `Features::registration()`.

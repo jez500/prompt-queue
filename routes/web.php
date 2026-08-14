@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\SsoController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectOrderController;
 use App\Http\Controllers\PromptController;
@@ -19,6 +20,13 @@ Route::get('/', function (): RedirectResponse {
 })->name('home');
 
 Route::get('manifest.webmanifest', WebManifestController::class)->name('manifest');
+
+/* Registered whether or not a provider has credentials, so Wayfinder emits the
+   same TypeScript in every environment — the controller 404s when it is off. */
+Route::middleware(['guest', 'throttle:10,1'])->group(function () {
+    Route::get('auth/{provider}/redirect', [SsoController::class, 'redirect'])->name('sso.redirect');
+    Route::get('auth/{provider}/callback', [SsoController::class, 'callback'])->name('sso.callback');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', 'prompts')->name('dashboard');

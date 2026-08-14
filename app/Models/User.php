@@ -46,6 +46,16 @@ class User extends Authenticatable
     }
 
     /**
+     * The external identity provider logins bound to this user.
+     *
+     * @return HasMany<UserIdentity, $this>
+     */
+    public function identities(): HasMany
+    {
+        return $this->hasMany(UserIdentity::class);
+    }
+
+    /**
      * The projects this user has created.
      *
      * @return HasMany<Project, $this>

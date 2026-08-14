@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -28,12 +29,19 @@ use Illuminate\Support\Str;
  * @property-read string $displayTitle
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 #[Fillable(['project_id', 'title', 'body', 'status', 'priority', 'position'])]
 class Prompt extends Model
 {
     /** @use HasFactory<PromptFactory> */
     use HasFactory;
+
+    /**
+     * Deleting a prompt is a one-click action with no undo in the UI, so the
+     * row is kept: a mistaken delete can be recovered from the database.
+     */
+    use SoftDeletes;
 
     /**
      * The maximum length of a title derived from the body.
@@ -66,8 +74,33 @@ class Prompt extends Model
                 return $this->title;
             }
 
-            return Str::limit(trim(Str::before($this->body, "\n")), self::DERIVED_TITLE_LENGTH, '');
+            return $this->derivedTitle();
         });
+    }
+
+    /**
+     * The title the editor derives from the body: its first line, minus any
+     * leading whitespace and Markdown heading marks.
+     *
+     * The same rule runs client-side in `usePromptAutosave`, which fills an
+     * empty title in as the prompt saves. This is the fallback for the
+     * prompts written before that, and the yardstick for deciding whether a
+     * stored title merely repeats the opening line.
+     */
+    public function derivedTitle(): string
+    {
+        $firstLine = (string) preg_replace('/^[\s#]+/u', '', Str::before($this->body, "\n"));
+
+        return Str::limit(trim($firstLine), self::DERIVED_TITLE_LENGTH, '');
+    }
+
+    /**
+     * Whether the stored title says nothing the first line of the body does
+     * not already say.
+     */
+    public function titleRepeatsBody(): bool
+    {
+        return blank($this->title) || trim($this->title) === $this->derivedTitle();
     }
 
     /**

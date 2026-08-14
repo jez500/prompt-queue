@@ -4,6 +4,7 @@ use App\Enums\PromptPriority;
 use App\Enums\PromptStatus;
 use App\Models\Project;
 use App\Models\Prompt;
+use App\Models\Tag;
 use App\Models\User;
 
 test('capturing with only a body creates an inbox prompt', function () {
@@ -115,4 +116,24 @@ test('a prompt cannot be captured into another user\'s project', function () {
 
 test('guests cannot capture', function () {
     $this->post(route('prompts.store'), ['body' => 'Hello'])->assertRedirect(route('login'));
+});
+
+test('tags typed before the first save are attached to the new prompt', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('prompts.store'), ['body' => 'Refactor billing', 'tags' => ['refactor', ' bug ']])
+        ->assertRedirect();
+
+    expect(Prompt::query()->sole()->tags->pluck('name')->sort()->values()->all())
+        ->toBe(['bug', 'refactor'])
+        ->and(Tag::query()->where('user_id', $user->id)->count())->toBe(2);
+});
+
+test('capturing without tags attaches none', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->post(route('prompts.store'), ['body' => 'No tags here']);
+
+    expect(Prompt::query()->sole()->tags)->toHaveCount(0);
 });

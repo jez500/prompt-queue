@@ -103,3 +103,38 @@ test('scopes are no-ops when given nothing', function () {
     expect(Prompt::query()->search(null)->withStatuses([])->withPriorities([])->withTagNames([])->count())
         ->toBe(3);
 });
+
+test('the derived title strips markdown heading marks and leading space', function () {
+    $prompt = Prompt::factory()->create([
+        'title' => null,
+        'body' => "##   Refactor the billing service\nIt has grown to 900 lines.",
+    ]);
+
+    expect($prompt->derivedTitle())->toBe('Refactor the billing service')
+        ->and($prompt->displayTitle)->toBe('Refactor the billing service');
+});
+
+test('a title repeats the body when it is the first line, marks and all', function () {
+    $derived = Prompt::factory()->create([
+        'title' => 'Refactor the billing service',
+        'body' => "# Refactor the billing service\nIt has grown to 900 lines.",
+    ]);
+
+    $own = Prompt::factory()->create([
+        'title' => 'Billing refactor',
+        'body' => "# Refactor the billing service\nIt has grown to 900 lines.",
+    ]);
+
+    expect($derived->titleRepeatsBody())->toBeTrue()
+        ->and($own->titleRepeatsBody())->toBeFalse();
+});
+
+test('deleting a prompt keeps the row', function () {
+    $prompt = Prompt::factory()->create();
+
+    $prompt->delete();
+
+    expect(Prompt::query()->count())->toBe(0)
+        ->and(Prompt::withTrashed()->count())->toBe(1)
+        ->and($prompt->fresh()?->deleted_at)->not->toBeNull();
+});

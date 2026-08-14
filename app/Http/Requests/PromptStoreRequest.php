@@ -27,7 +27,21 @@ class PromptStoreRequest extends FormRequest
                 'integer',
                 Rule::exists('projects', 'id')->where('user_id', $this->user()->id),
             ],
+            'tags' => ['sometimes', 'array'],
+            'tags.*' => ['string', 'max:50'],
         ];
+    }
+
+    /**
+     * The tag names to attach, for tags typed before the first save.
+     *
+     * @return array<int, string>
+     */
+    public function tagNames(): array
+    {
+        return array_values(array_unique(array_filter(
+            array_map(trim(...), $this->array('tags'))
+        )));
     }
 
     /**

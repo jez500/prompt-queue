@@ -218,3 +218,50 @@ test('a prompt cannot be moved into another user\'s project', function () {
         ->patch(route('prompts.update', $prompt), ['body' => $prompt->body, 'project' => $foreignProject->id])
         ->assertSessionHasErrors('project');
 });
+
+test('a tag left on no prompt is deleted with the last prompt carrying it', function () {
+    $user = User::factory()->create();
+    $prompt = Prompt::factory()->forUser($user)->create();
+    $tag = Tag::factory()->forUser($user)->create(['name' => 'bug']);
+    $prompt->tags()->attach($tag);
+
+    $this->actingAs($user)->patch(route('prompts.update', $prompt), ['tags' => []]);
+
+    expect(Tag::query()->count())->toBe(0);
+});
+
+test('a tag still on another prompt survives being removed from one', function () {
+    $user = User::factory()->create();
+    $kept = Prompt::factory()->forUser($user)->create();
+    $edited = Prompt::factory()->forUser($user)->create();
+    $tag = Tag::factory()->forUser($user)->create(['name' => 'bug']);
+    $kept->tags()->attach($tag);
+    $edited->tags()->attach($tag);
+
+    $this->actingAs($user)->patch(route('prompts.update', $edited), ['tags' => []]);
+
+    expect(Tag::query()->count())->toBe(1)
+        ->and($kept->refresh()->tags->pluck('name')->all())->toBe(['bug']);
+});
+
+test('deleting the last prompt carrying a tag takes the tag with it', function () {
+    $user = User::factory()->create();
+    $prompt = Prompt::factory()->forUser($user)->create();
+    $tag = Tag::factory()->forUser($user)->create(['name' => 'bug']);
+    $prompt->tags()->attach($tag);
+
+    $this->actingAs($user)->delete(route('prompts.destroy', $prompt));
+
+    expect(Tag::query()->count())->toBe(0);
+});
+
+test('another user\'s orphaned tags are left alone', function () {
+    $user = User::factory()->create();
+    $stranger = User::factory()->create();
+    $prompt = Prompt::factory()->forUser($user)->create();
+    Tag::factory()->forUser($stranger)->create(['name' => 'theirs']);
+
+    $this->actingAs($user)->delete(route('prompts.destroy', $prompt));
+
+    expect(Tag::query()->pluck('name')->all())->toBe(['theirs']);
+});

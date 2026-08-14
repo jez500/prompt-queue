@@ -203,3 +203,52 @@ test('an unknown status is rejected', function () {
 test('guests are redirected to login', function () {
     $this->get(route('prompts.index'))->assertRedirect(route('login'));
 });
+
+test('the excerpt skips a first line the title already shows', function () {
+    $user = User::factory()->create();
+    Prompt::factory()->forUser($user)->create([
+        'title' => 'Refactor billing',
+        'body' => "# Refactor billing\n\nIt has grown to 900 lines.",
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('prompts.0.title', 'Refactor billing')
+            ->where('prompts.0.excerpt', 'It has grown to 900 lines.')
+        );
+});
+
+test('a prompt that is only its title carries no excerpt', function () {
+    $user = User::factory()->create();
+    Prompt::factory()->forUser($user)->create(['title' => null, 'body' => 'Ship the thing']);
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('prompts.0.title', 'Ship the thing')
+            ->where('prompts.0.excerpt', '')
+        );
+});
+
+test('a deleted prompt drops off the list', function () {
+    $user = User::factory()->create();
+    $prompt = Prompt::factory()->forUser($user)->create(['body' => 'Gone']);
+    $prompt->delete();
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page->has('prompts', 0));
+});
+
+test('the filter bar lists only tags that are on a prompt', function () {
+    $user = User::factory()->create();
+    $prompt = Prompt::factory()->forUser($user)->create();
+    $used = Tag::factory()->forUser($user)->create(['name' => 'used']);
+    Tag::factory()->forUser($user)->create(['name' => 'orphan']);
+    $prompt->tags()->attach($used);
+
+    $this->actingAs($user)
+        ->get(route('prompts.index'))
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('tags', ['used']));
+});

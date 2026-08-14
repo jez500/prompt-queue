@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\PurgeOrphanedTags;
 use App\Actions\SyncPromptTags;
 use App\Enums\PromptPriority;
 use App\Enums\PromptStatus;
@@ -64,17 +65,17 @@ class PromptController extends Controller
     /**
      * Capture a new prompt at the top of its bucket.
      */
-    public function store(PromptStoreRequest $request): RedirectResponse
+    public function store(PromptStoreRequest $request, SyncPromptTags $syncTags): RedirectResponse
     {
         $projectId = $request->bucketProjectId();
 
-        DB::transaction(function () use ($request, $projectId): void {
+        DB::transaction(function () use ($request, $projectId, $syncTags): void {
             Prompt::query()
                 ->whereBelongsTo($request->user())
                 ->inBucket($projectId)
                 ->increment('position');
 
-            $request->user()->prompts()->create([
+            $prompt = $request->user()->prompts()->create([
                 'project_id' => $projectId,
                 'title' => $request->title(),
                 'body' => $request->string('body')->toString(),
@@ -82,6 +83,10 @@ class PromptController extends Controller
                 'priority' => $request->priority(),
                 'position' => 0,
             ]);
+
+            /* Tags typed before the first save arrive with the capture: the
+               prompt has no id to attach them to until this point. */
+            $syncTags($prompt, $request->user(), $request->tagNames());
         });
 
         return back();
@@ -90,14 +95,18 @@ class PromptController extends Controller
     /**
      * Update a prompt, moving it between projects and syncing its tags.
      */
-    public function update(PromptUpdateRequest $request, Prompt $prompt, SyncPromptTags $syncTags): RedirectResponse
-    {
+    public function update(
+        PromptUpdateRequest $request,
+        Prompt $prompt,
+        SyncPromptTags $syncTags,
+        PurgeOrphanedTags $purgeTags,
+    ): RedirectResponse {
         Gate::authorize('update', $prompt);
 
         $targetProjectId = $request->bucketProjectId();
         $movesProject = $request->shouldMoveProject() && $targetProjectId !== $prompt->project_id;
 
-        DB::transaction(function () use ($request, $prompt, $targetProjectId, $movesProject, $syncTags): void {
+        DB::transaction(function () use ($request, $prompt, $targetProjectId, $movesProject, $syncTags, $purgeTags): void {
             $attributes = $request->fillableAttributes();
 
             if ($movesProject) {
@@ -114,6 +123,7 @@ class PromptController extends Controller
 
             if ($request->shouldSyncTags()) {
                 $syncTags($prompt, $request->user(), $request->tagNames());
+                $purgeTags($request->user());
             }
         });
 
@@ -123,11 +133,12 @@ class PromptController extends Controller
     /**
      * Delete a prompt.
      */
-    public function destroy(Request $request, Prompt $prompt): RedirectResponse
+    public function destroy(Request $request, Prompt $prompt, PurgeOrphanedTags $purgeTags): RedirectResponse
     {
         Gate::authorize('delete', $prompt);
 
         $prompt->delete();
+        $purgeTags($request->user());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Prompt deleted.')]);
 

@@ -57,7 +57,12 @@ class HandleInertiaRequests extends Middleware
                         ->get()
                 )->resolve()
                 : [],
-            'tags' => $user ? $user->tags()->orderBy('name')->pluck('name')->all() : [],
+            /* Only tags that are actually on a prompt. They are deleted when
+               their last prompt goes, but rows orphaned before that ran would
+               otherwise sit in the filter bar with nothing to filter. */
+            'tags' => $user
+                ? $user->tags()->whereHas('prompts')->orderBy('name')->pluck('name')->all()
+                : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

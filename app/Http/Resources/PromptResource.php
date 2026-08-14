@@ -65,10 +65,27 @@ class PromptResource extends JsonResource
     }
 
     /**
-     * The first line of the body, trimmed to preview length.
+     * The preview line shown under the title on a card.
+     *
+     * Normally the first line of the body. When the title is that same line —
+     * because it was derived from it, or because there is no title at all and
+     * the card falls back to it — the preview skips ahead to the first line
+     * that says something new, rather than printing the title twice.
      */
     private function excerpt(): string
     {
-        return Str::limit(trim(Str::before($this->body, "\n")), self::EXCERPT_LENGTH);
+        $body = $this->body;
+
+        if ($this->titleRepeatsBody()) {
+            /* Str::after hands back the whole string when the needle is
+               absent, which would print the one line the title already is. */
+            $body = Str::contains($body, "\n") ? Str::after($body, "\n") : '';
+        }
+
+        $line = collect(preg_split('/\R/u', $body) ?: [])
+            ->map(fn (string $line): string => trim($line))
+            ->first(fn (string $line): bool => $line !== '');
+
+        return Str::limit((string) $line, self::EXCERPT_LENGTH);
     }
 }

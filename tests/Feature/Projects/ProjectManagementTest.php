@@ -76,9 +76,11 @@ test('another user\'s project is a 404', function () {
 test('projects and tags are shared with every authenticated page', function () {
     $user = User::factory()->create();
     $project = Project::factory()->forUser($user)->create(['name' => 'Alpha']);
-    Prompt::factory()->forUser($user)->inProject($project)->status(PromptStatus::Todo)->create();
+    $open = Prompt::factory()->forUser($user)->inProject($project)->status(PromptStatus::Todo)->create();
     Prompt::factory()->forUser($user)->inProject($project)->status(PromptStatus::Done)->create();
-    Tag::factory()->forUser($user)->create(['name' => 'bug']);
+    /* Attached, because only tags that are on a prompt are shared — see the
+       filter-bar case in Prompts/IndexTest. */
+    $open->tags()->attach(Tag::factory()->forUser($user)->create(['name' => 'bug']));
 
     $this->actingAs($user)
         ->get(route('prompts.index'))

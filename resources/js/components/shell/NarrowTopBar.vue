@@ -5,6 +5,7 @@ import { computed } from 'vue';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import UserMenuContent from '@/components/UserMenuContent.vue';
@@ -27,27 +28,75 @@ const emit = defineEmits<{ newPrompt: [] }>();
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const { getInitials } = useInitials();
-const { items } = useProjectScopeNav();
+const { items, allPromptsItem } = useProjectScopeNav();
+
+/*
+  The scope used to be a row of pills the user had to scroll sideways through,
+  which hid every project past the third on a phone. One trigger naming the
+  current scope replaces it, and the menu holds the rest.
+
+  Off the queue nothing is active — `useProjectScopeNav` gates that
+  deliberately — so the trigger names "All prompts", which is where tapping
+  through lands.
+*/
+const activeItem = computed(
+    () => items.value.find((item) => item.active) ?? allPromptsItem.value,
+);
 </script>
 
 <template>
     <div class="flex items-center gap-2 px-3.5 pt-3">
-        <div class="flex flex-1 items-center gap-2 overflow-x-auto">
-            <Link
-                v-for="item in items"
-                :key="item.id"
-                :href="item.href"
-                class="flex h-[30px] flex-none items-center gap-1.5 rounded-full border border-border px-3 text-[12.5px]"
-                :class="
-                    item.active
-                        ? 'bg-accent font-semibold text-foreground'
-                        : 'bg-transparent font-normal text-secondary-foreground'
-                "
+        <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+                <button
+                    type="button"
+                    aria-label="Change project scope"
+                    class="flex h-[30px] min-w-0 flex-1 items-center gap-1.5 rounded-full border border-border bg-accent px-3 text-[12.5px] font-semibold text-foreground"
+                >
+                    <span
+                        class="size-1.5 flex-none rounded-full"
+                        :class="activeItem.dotClass"
+                    />
+                    <span class="truncate">{{ activeItem.name }}</span>
+                    <span class="ml-auto flex-none text-[8px] opacity-70"
+                        >▾</span
+                    >
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                class="w-60 border-ring bg-popover text-popover-foreground"
+                align="start"
             >
-                <span class="size-1.5 rounded-full" :class="item.dotClass" />
-                {{ item.name }}
-            </Link>
-        </div>
+                <DropdownMenuItem
+                    v-for="item in items"
+                    :key="item.id"
+                    as-child
+                    class="gap-2 focus:bg-surface-hover focus:text-foreground"
+                >
+                    <Link
+                        :href="item.href"
+                        class="flex w-full items-center gap-2 text-[13px]"
+                        :class="
+                            item.active
+                                ? 'font-semibold text-foreground'
+                                : 'font-normal text-muted-foreground'
+                        "
+                    >
+                        <span
+                            class="size-1.5 flex-none rounded-full"
+                            :class="item.dotClass"
+                        />
+                        <span class="truncate">{{ item.name }}</span>
+                        <span
+                            v-if="item.count !== null"
+                            class="ml-auto flex-none font-mono text-[11px] text-subtle-foreground"
+                        >
+                            {{ item.count }}
+                        </span>
+                    </Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
 
         <Link
             v-if="linkToQueue"

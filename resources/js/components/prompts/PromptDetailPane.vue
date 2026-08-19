@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { Check, RotateCcw, Trash2 } from '@lucide/vue';
+import {
+    Check,
+    CircleAlert,
+    CircleCheck,
+    CloudUpload,
+    LoaderCircle,
+    RotateCcw,
+    Trash2,
+} from '@lucide/vue';
 import type { Ref } from 'vue';
 import { computed, inject, nextTick, ref, watch } from 'vue';
 import PromptPriorityPill from '@/components/prompts/PromptPriorityPill.vue';
@@ -127,6 +135,23 @@ const saveDotClass = computed(() => {
         : 'bg-ghost-foreground';
 });
 
+/*
+  The narrow header carries a back button, two icon buttons and the copy
+  button on one nowrap row, which leaves no room for the words. The icon says
+  the same thing, and `saveLabel` becomes its accessible name.
+*/
+const saveIcon = computed(() => {
+    if (autosave.saving.value) {
+        return LoaderCircle;
+    }
+
+    if (autosave.failed.value) {
+        return CircleAlert;
+    }
+
+    return autosave.savedAt.value ? CircleCheck : CloudUpload;
+});
+
 const saveTextClass = computed(() => {
     if (autosave.saving.value) {
         return 'text-muted-foreground';
@@ -222,7 +247,22 @@ const removeTag = (name: string): void => {
              like a page refresh. -->
         <template v-if="isNew || prompt || awaitingCreate">
             <PaneHeader :narrow="narrow" @back="emit('back')">
-                <div class="flex items-center gap-1.5">
+                <Tooltip v-if="narrow">
+                    <TooltipTrigger as-child>
+                        <component
+                            :is="saveIcon"
+                            class="size-4 flex-none"
+                            :class="[
+                                saveTextClass,
+                                autosave.saving.value ? 'animate-spin' : '',
+                            ]"
+                            role="img"
+                            :aria-label="saveLabel"
+                        />
+                    </TooltipTrigger>
+                    <TooltipContent>{{ saveLabel }}</TooltipContent>
+                </Tooltip>
+                <div v-else class="flex items-center gap-1.5">
                     <span class="size-1.5 rounded-full" :class="saveDotClass" />
                     <span
                         class="font-mono text-[10.5px] tracking-[0.04em]"

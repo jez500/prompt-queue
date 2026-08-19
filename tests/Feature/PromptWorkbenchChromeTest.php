@@ -111,6 +111,7 @@ it('leaves the card summary empty rather than repeating the title', function ():
         ->toContain('v-if="preview"')
         ->not->toContain('Empty — open to write it');
 });
+
 it('names the title field for what belongs in it', function (): void {
     /*
       "Untitled prompt" described the prompt's state rather than asking for
@@ -152,4 +153,29 @@ it('offers enough placeholders for the rotation to be worth having', function ()
 
     expect(count($lines))->toBeGreaterThanOrEqual(8)
         ->and($lines)->toBe(array_values(array_unique($lines)));
+});
+
+it('picks the project scope from a menu rather than a sideways scroll', function (): void {
+    /*
+      The scope was a row of pills in a horizontal scroller, so on a phone
+      every project past the third was off screen with nothing to say so.
+    */
+    $source = workbenchSource('js/components/shell/NarrowTopBar.vue');
+
+    expect($source)
+        ->toContain('aria-label="Change project scope"')
+        ->toContain('DropdownMenuItem')
+        ->toContain('items.value.find((item) => item.active)')
+        ->not->toContain('overflow-x-auto');
+});
+
+it('shows the save state as an icon where the words do not fit', function (): void {
+    /*
+      The narrow header carries a back button, two icon buttons and the copy
+      button on one nowrap row. "Auto-saves" was pushed off the end of it.
+    */
+    expect(workbenchSource('js/components/prompts/PromptDetailPane.vue'))
+        ->toContain('<Tooltip v-if="narrow">')
+        ->toContain(':is="saveIcon"')
+        ->toContain(':aria-label="saveLabel"');
 });

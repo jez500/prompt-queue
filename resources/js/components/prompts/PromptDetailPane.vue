@@ -18,6 +18,10 @@ import { shortcutHint } from '@/composables/useKeyboardShortcuts';
 import { usePromptAutosave } from '@/composables/usePromptAutosave';
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints';
 import { PROJECT_DOT_CLASSES } from '@/lib/projectColors';
+import {
+    currentBodyPlaceholder,
+    nextBodyPlaceholder,
+} from '@/lib/promptPlaceholders';
 import { formatRelativeTime } from '@/lib/relativeTime';
 import type { Prompt } from '@/types';
 
@@ -55,10 +59,15 @@ const tagDraft = ref('');
 const copiedId = ref<number | null>(null);
 let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
+/* Held rather than computed: the line must not change under the user while
+   the draft is open, only when the next one starts. */
+const bodyPlaceholder = ref(currentBodyPlaceholder());
+
 watch(
     () => isNew,
     (value) => {
         if (value) {
+            bodyPlaceholder.value = nextBodyPlaceholder();
             nextTick(() => titleInput.value?.focus());
         }
     },
@@ -316,14 +325,14 @@ const removeTag = (name: string): void => {
                 <input
                     ref="titleInput"
                     v-model="autosave.title.value"
-                    placeholder="Untitled prompt"
+                    placeholder="One liner…"
                     class="w-full bg-transparent font-sans font-bold tracking-tight text-foreground outline-none"
                     :class="narrow ? 'text-[22px]' : 'text-[29px]'"
                 />
                 <textarea
                     v-model="autosave.body.value"
                     :data-prompt-body="prompt?.id"
-                    placeholder="Write the prompt you want to hand an agent…"
+                    :placeholder="bodyPlaceholder"
                     class="w-full flex-1 resize-none rounded-[14px] border border-border bg-card p-6 font-mono text-sm leading-[1.75] text-editor-foreground outline-none focus:border-ring"
                 />
 

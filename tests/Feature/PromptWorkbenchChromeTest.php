@@ -111,3 +111,45 @@ it('leaves the card summary empty rather than repeating the title', function ():
         ->toContain('v-if="preview"')
         ->not->toContain('Empty — open to write it');
 });
+it('names the title field for what belongs in it', function (): void {
+    /*
+      "Untitled prompt" described the prompt's state rather than asking for
+      anything, so the field read as a label and people typed past it.
+    */
+    expect(workbenchSource('js/components/prompts/PromptDetailPane.vue'))
+        ->toContain('placeholder="One liner…"')
+        ->not->toContain('placeholder="Untitled prompt"');
+});
+
+it('rotates the body placeholder rather than fixing one line', function (): void {
+    expect(workbenchSource('js/components/prompts/PromptDetailPane.vue'))
+        ->toContain(':placeholder="bodyPlaceholder"')
+        ->toContain('bodyPlaceholder.value = nextBodyPlaceholder();');
+});
+
+it('advances the placeholder rotation once per draft', function (): void {
+    /*
+      The detail pane unmounts every time the narrow layout returns to the
+      list. Advancing the cursor when the component mounts as well as when a
+      draft opens stepped it twice, and an even-length list stepped by two
+      never shows half its entries.
+    */
+    expect(workbenchSource('js/components/prompts/PromptDetailPane.vue'))
+        ->toContain('ref(currentBodyPlaceholder())')
+        ->not->toContain('ref(nextBodyPlaceholder())');
+});
+
+it('offers enough placeholders for the rotation to be worth having', function (): void {
+    $source = workbenchSource('js/lib/promptPlaceholders.ts');
+
+    preg_match('/const BODY_PLACEHOLDERS = \[(.*?)\];/s', $source, $matches);
+
+    expect($matches)->toHaveCount(2, 'The placeholder list is gone.');
+
+    preg_match_all("/'((?:[^'\\\\]|\\\\.)*)'/", $matches[1], $entries);
+
+    $lines = $entries[1];
+
+    expect(count($lines))->toBeGreaterThanOrEqual(8)
+        ->and($lines)->toBe(array_values(array_unique($lines)));
+});

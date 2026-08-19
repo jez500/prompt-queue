@@ -228,6 +228,7 @@ const toggle = <T extends string>(list: T[], value: T): T[] =>
         :is-new="selectedId === 'new'"
         :narrow="narrow"
         :draft-project-id="captureProjectId"
+        :awaiting-create="pendingCreatedId !== null"
         @back="openDetail = false"
         @created="handleCreated"
         @moved="handleMoved"

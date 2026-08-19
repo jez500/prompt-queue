@@ -21,11 +21,15 @@ import { PROJECT_DOT_CLASSES } from '@/lib/projectColors';
 import { formatRelativeTime } from '@/lib/relativeTime';
 import type { Prompt } from '@/types';
 
-const { prompt, isNew, narrow, draftProjectId } = defineProps<{
+const { prompt, isNew, narrow, draftProjectId, awaitingCreate } = defineProps<{
     prompt: Prompt | null;
     isNew: boolean;
     narrow: boolean;
     draftProjectId: number | null;
+    /* A create has landed and the page is waiting for the prompt itself. The
+       draft is over, so `isNew` is false, and `prompt` does not arrive until
+       the follow-up visit — see the guard on the editor below. */
+    awaitingCreate: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -62,7 +66,7 @@ watch(
 );
 
 const project = computed(() => {
-    const id = isNew ? draftProjectId : (prompt?.projectId ?? null);
+    const id = prompt ? prompt.projectId : draftProjectId;
 
     if (id === null) {
         return null;
@@ -203,7 +207,11 @@ const removeTag = (name: string): void => {
 
 <template>
     <AppPane variant="detail" :narrow="narrow">
-        <template v-if="isNew || prompt">
+        <!-- Unmounting this subtree destroys the textarea, and the caret
+             with it. It must survive the gap between a create landing and the
+             created prompt arriving, or typing is interrupted by what looks
+             like a page refresh. -->
+        <template v-if="isNew || prompt || awaitingCreate">
             <PaneHeader :narrow="narrow" @back="emit('back')">
                 <div class="flex items-center gap-1.5">
                     <span class="size-1.5 rounded-full" :class="saveDotClass" />
@@ -216,7 +224,7 @@ const removeTag = (name: string): void => {
                 </div>
 
                 <template #actions>
-                    <Tooltip v-if="!isNew">
+                    <Tooltip v-if="!isNew && prompt">
                         <TooltipTrigger as-child>
                             <button
                                 type="button"

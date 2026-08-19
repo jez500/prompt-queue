@@ -100,3 +100,53 @@ it('ships no debug instrumentation', function (): void {
         ->not->toContain('console.log')
         ->not->toContain('DEBUG-INSTRUMENTATION');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Prompt autosave — the create round trip
+|--------------------------------------------------------------------------
+|
+| The detail pane rendered its editor only while `isNew || prompt`. The page
+| clears `drafting` the moment a create lands, but the created prompt only
+| arrives on the follow-up `only: ['selected']` visit — so for one round trip
+| both were false. The editor unmounted, the "No prompt selected" empty state
+| took its place, and the textarea was destroyed with the caret inside it.
+|
+| Reproduced in the browser: type into a new prompt, and ~65ms after the first
+| autosave the textarea is removed and re-added. The text survives. Focus does
+| not, so the next keystroke goes nowhere.
+|
+*/
+
+function detailPaneSource(): string
+{
+    $path = resource_path('js/components/prompts/PromptDetailPane.vue');
+
+    expect($path)->toBeReadableFile();
+
+    return (string) file_get_contents($path);
+}
+
+it('keeps the editor mounted while a create is in flight', function (): void {
+    expect(detailPaneSource())
+        ->toContain('v-if="isNew || prompt || awaitingCreate"')
+        ->toContain('awaitingCreate: boolean;');
+});
+
+it('tells the pane when it is waiting for a created prompt', function (): void {
+    $path = resource_path('js/pages/prompts/Index.vue');
+
+    expect($path)->toBeReadableFile();
+    expect((string) file_get_contents($path))
+        ->toContain(':awaiting-create="pendingCreatedId !== null"');
+});
+
+it('offers no destructive action against a prompt that has not arrived', function (): void {
+    /*
+      Delete and "mark done" render inside that same window. Both act on
+      `prompt`, which is null until the follow-up visit lands.
+    */
+    expect(detailPaneSource())
+        ->toContain('<Tooltip v-if="!isNew && prompt">')
+        ->not->toContain('<Tooltip v-if="!isNew">');
+});

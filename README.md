@@ -9,6 +9,8 @@ default.
 
 ![Docker image](https://img.shields.io/docker/v/jez500/prompt-queue?label=docker&sort=semver)
 
+![Prompt Queue: projects on the left, the prompt queue in the middle, the editor on the right](docs/images/prompt-queue-ui.png)
+
 ---
 
 ## What it does
